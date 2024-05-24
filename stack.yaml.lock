@@ -18,6 +18,13 @@ packages:
       size: 1588
   original:
     hackage: profunctors-5.6.2
+- completed:
+    hackage: hxt-9.3.1.22@sha256:2d9b2ddda1bf8b1697a9443560a81991663cd8b73ebea4a8106ad025c1151704,9919
+    pantry-tree:
+      sha256: 85f1a15a17e91b9a0a6609b19537e925950bcabdb0900f6c5d8f813fa012bb8b
+      size: 10091
+  original:
+    hackage: hxt-9.3.1.22
 snapshots:
 - completed:
     sha256: 4be1ca5d31689b524a7f0f17a439bbe9136465213edc498e9a395899a670f2aa

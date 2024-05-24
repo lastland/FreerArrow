@@ -34,21 +34,15 @@ ghc-options:
 - -Wredundant-constraints
 
 library:
-  source-dirs: src
+  source-dirs:
+  - src
+  - examples
   dependencies:
   - profunctors
+  - hxt
+  ghc-options:
+  - -Wno-missing-export-lists
 
-
-executables:
-  FreerArrow-exe:
-    main:                Main.hs
-    source-dirs:         app
-    ghc-options:
-    - -threaded
-    - -rtsopts
-    - -with-rtsopts=-N
-    dependencies:
-    - FreerArrow
 
 tests:
   FreerArrow-test:

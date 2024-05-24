@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
+
 module Control.Arrow.Freer.FreerArrowChoice where
 
 import qualified Data.Bifunctor as B (first)

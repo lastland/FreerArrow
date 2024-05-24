@@ -27,31 +27,19 @@ library
   exposed-modules:
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
-      Lib
+      Examples.State
   other-modules:
       Paths_FreerArrow
   autogen-modules:
       Paths_FreerArrow
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints
+      examples
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
       base >=4.7 && <5
+    , hxt
     , profunctors
-  default-language: Haskell2010
-
-executable FreerArrow-exe
-  main-is: Main.hs
-  other-modules:
-      Paths_FreerArrow
-  autogen-modules:
-      Paths_FreerArrow
-  hs-source-dirs:
-      app
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
-  build-depends:
-      FreerArrow
-    , base >=4.7 && <5
   default-language: Haskell2010
 
 test-suite FreerArrow-test
