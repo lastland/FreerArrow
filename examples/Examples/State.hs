@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts      #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE RankNTypes            #-}
@@ -29,6 +30,7 @@ get = embed Get
 put :: FreerArrow (StateEff s) s s
 put = embed Put
 
+-- |- A freer arrow is an ArrowState.
 instance ArrowState s (FreerArrow (StateEff s)) where
   getState = get
 
@@ -51,10 +53,26 @@ echo2 :: ArrowState s arr => arr () (s, s)
 -- arrow combinator.
 echo2 = getState >>> setState &&& setState
 
+-- |- Get the state before increasing it on two separate branches. This should
+-- result in a state that is exactly 1 larger than the original state because
+-- you only [getState] once.
+inc :: ArrowState Int arr => arr () (Int, Int)
+inc = getState >>> incSet &&& incSet
+  where incSet = arr (+1) >>> setState
+
+-- |- Get the state on two different branches. This should result in a state
+-- that is exactly 2 larger than the original state.
+inc2 :: ArrowState Int arr => arr () (Int, Int)
+inc2 = incSet &&& incSet
+  where incSet = getState >>> arr (+1) >>> setState
+
+-- | An event handler for [StateEff].
 handleState :: ArrowState s arr => StateEff s ~> arr 
 handleState Get = getState
 handleState Put = setState
 
+-- | Interpreting a FreerArrow with StateEff event to another arrow by using the
+-- [handleState] event handler.
 interpState :: (Profunctor arr, ArrowState s arr) =>
   FreerArrow (StateEff s) ~> arr
 interpState = interp handleState
