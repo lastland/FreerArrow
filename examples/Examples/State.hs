@@ -14,6 +14,7 @@ import Control.Arrow.ArrowState
 import Control.Arrow.Freer.FreerArrow
 import Data.Profunctor
 import Data.Kind
+import Prelude hiding ((.), id)
 
 -- |- An ADT for stateful effect.
 data StateEff :: Type -> Type -> Type -> Type where
@@ -57,3 +58,34 @@ handleState Put = setState
 interpState :: (Profunctor arr, ArrowState s arr) =>
   FreerArrow (StateEff s) ~> arr
 interpState = interp handleState
+
+
+-- The following code is adapted from Nicholas Coltharp.
+
+newtype AState s a b = AState { runState :: a -> s -> (b, s) }
+
+instance Category (AState s) where
+  id = AState (,)
+
+  AState f . AState g = AState $ \x s -> uncurry f (g x s)
+
+instance Arrow (AState s) where
+  arr f = AState $ \a s -> (f a, s)
+
+  first (AState f) = AState $ \(a, c) s -> let (b, s') = f a s in ((b, c), s')
+
+instance ArrowState s (AState s) where
+  getState = AState $ \_ s -> (s, s)
+
+  setState = AState $ \s _ -> (s, s)
+
+  changeState f = arr ((),) >>>
+    first getState >>> arr (\(s, b) -> (f s b, b)) >>>
+    first setState >>> arr snd
+
+  accessState f = arr ((),) >>>
+    first getState >>> arr (uncurry f)
+
+instance Profunctor (AState s) where
+  dimap f g (AState h) = AState $ \a s ->
+    let (b, s') = h (f a) s in (g b, s')
