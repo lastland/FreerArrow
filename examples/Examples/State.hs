@@ -1,3 +1,4 @@
+{-# LANGUAGE Arrows                #-}
 {-# LANGUAGE FlexibleInstances     #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleContexts      #-}
@@ -65,6 +66,14 @@ inc = getState >>> incSet &&& incSet
 inc2 :: ArrowState Int arr => arr () (Int, Int)
 inc2 = incSet &&& incSet
   where incSet = getState >>> arr (+1) >>> setState
+
+-- |-
+inc' :: ArrowState Int arr => arr a Int
+inc' = proc x -> do
+  s <- getState -< x
+  a <- setState -< s + 1
+  b <- setState -< s + 1
+  returnA -< a - b
 
 -- | An event handler for [StateEff].
 handleState :: ArrowState s arr => StateEff s ~> arr 
