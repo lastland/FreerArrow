@@ -9,6 +9,7 @@ module Control.Arrow.Freer.FreerArrow where
 import qualified Data.Bifunctor as B (first)
 import Control.Category
 import Control.Arrow
+import Control.Concurrent.Async
 import Data.Profunctor
 import Prelude hiding (id, (.))
 
@@ -86,7 +87,20 @@ type x ~> y = forall a b. x a b -> y a b
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, Arrow arr) =>
-  (e ~> arr) -> FreerArrow e x y -> arr x y
+          (e ~> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y
+
+compile :: (Profunctor arr, Arrow arr) =>
+           (forall x y. e x y -> IO (arr x y)) ->
+           FreerArrow e a b -> IO (arr a b)
+compile _       (Hom f) = pure (arr f)
+{--
+compile handler (Comp f g x (Comp h i y z)) = do
+  ((x', y'), z') <- concurrently ((,) <$> handler x <*> handler y) (compile handler z)
+  pure (dimap f g (first x') >>> dimap h i (first y') >>> z')
+--}
+compile handler (Comp f g x y) = do
+  (x', y') <- concurrently (dimap f g . first <$> handler x) (compile handler y)
+  pure (x' >>> y')

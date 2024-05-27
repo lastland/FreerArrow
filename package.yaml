@@ -40,6 +40,8 @@ library:
   dependencies:
   - profunctors
   - hxt
+  - stm
+  - async
   ghc-options:
   - -Wno-missing-export-lists
 

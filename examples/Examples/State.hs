@@ -14,6 +14,7 @@ import Control.Category
 import Control.Arrow
 import Control.Arrow.ArrowState
 import Control.Arrow.Freer.FreerArrow
+import Control.Concurrent.Async
 import Data.Profunctor
 import Data.Kind
 import Prelude hiding ((.), id)
@@ -75,10 +76,18 @@ inc' = proc x -> do
   b <- setState -< s + 1
   returnA -< a - b
 
+incN :: ArrowState Int arr => Int -> arr a Int
+incN n | n > 0 = inc' >>> incN (n - 1)
+       | otherwise = inc'
+
 -- | An event handler for [StateEff].
 handleState :: ArrowState s arr => StateEff s ~> arr 
 handleState Get = getState
 handleState Put = setState
+
+compileState :: ArrowState s arr => StateEff s x y -> IO (arr x y)
+compileState Get = pure getState
+compileState Put = pure setState
 
 -- | Interpreting a FreerArrow with StateEff event to another arrow by using the
 -- [handleState] event handler.
@@ -86,6 +95,16 @@ interpState :: (Profunctor arr, ArrowState s arr) =>
   FreerArrow (StateEff s) ~> arr
 interpState = interp handleState
 
+compiler :: (Profunctor arr, ArrowState s arr) =>
+  FreerArrow (StateEff s) x y -> IO (arr x y)
+compiler = compile compileState
+
+optimizeState :: FreerArrow (StateEff s) x y -> FreerArrow (StateEff s) x y
+optimizeState (Comp f g Put (Comp h i Put x)) =
+  optimizeState (Comp (h . g . f) i Put x)
+optimizeState (Comp f g e x) = Comp f g e (optimizeState x)
+optimizeState (Hom f) = Hom f
+ 
 
 -- The following code is adapted from Nicholas Coltharp.
 

@@ -28,6 +28,7 @@ library
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
       Examples.State
+      Examples.STM
   other-modules:
       Paths_FreerArrow
   autogen-modules:
@@ -37,9 +38,11 @@ library
       examples
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
-      base >=4.7 && <5
+      async
+    , base >=4.7 && <5
     , hxt
     , profunctors
+    , stm
   default-language: Haskell2010
 
 test-suite FreerArrow-test
