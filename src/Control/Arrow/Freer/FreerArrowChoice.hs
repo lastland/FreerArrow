@@ -15,10 +15,15 @@ import Prelude hiding (id, (.))
 
 -- |- Freer arrow choice. Inspired by:
 -- [https://www.reddit.com/r/haskell/comments/p7grsq/comment/h9k2anl/?utm_source=share&utm_medium=web3x&utm_name=web3xcss&utm_term=1&utm_content=share_button]
+{-- begin FreerArrowChoice --}
 data FreerArrowChoice e x y where
   Hom :: (x -> y) -> FreerArrowChoice e x y
-  Comp :: (x -> Either (a, c) w) -> (Either (b, c) w -> y) ->
-    e a b -> FreerArrowChoice e y z -> FreerArrowChoice e x z
+  Comp :: (x -> Either (a, c) w) ->
+          (Either (b, c) w -> z) ->
+          e a b ->
+          FreerArrowChoice e z y ->
+          FreerArrowChoice e x y
+{-- end FreerArrowChoice --}
 
 -- |- This is called overCount because with FreerArrowChoice, there is no
 -- guarantee that theeffect will happen. Instead, the static analyzer gives us

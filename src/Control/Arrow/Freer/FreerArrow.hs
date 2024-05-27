@@ -14,10 +14,15 @@ import Prelude hiding (id, (.))
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
+{-- begin FreerArrow --}
 data FreerArrow e x y where
   Hom :: (x -> y) -> FreerArrow e x y
-  Comp :: (x -> (a, c)) -> ((b, c) -> z) ->
-    e a b -> FreerArrow e z y -> FreerArrow e x y
+  Comp :: (x -> (a, c)) ->
+          ((b, c) -> z) ->
+          e a b ->
+          FreerArrow e z y ->
+          FreerArrow e x y
+{-- end FreerArrow --}
 
 -- A function that counts the number of effects in a freer arrow. This
 -- illustrates that some static analysis can be performed on freer arrows. Even
@@ -40,31 +45,40 @@ data ReifiedArrow e x y where
 embed :: e x y -> FreerArrow e x y
 embed f = Comp (,()) fst f id
 
+{-- begin Arrow_FreerArrow --}
 -- |- Freer arrows are arrows.
 instance Arrow (FreerArrow e) where
   arr = Hom
-
   first = first'
+{-- end Arrow_FreerArrow --}
 
+{-- begin Strong_FreerArrow --}
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where
   dimap f g (Hom h) = Hom (g . h . f)
-  dimap f g (Comp f' g' x y) = Comp (f' . f) g' x (dimap id g y)
+  dimap f g (Comp f' g' x y) =
+    Comp (f' . f) g' x (dimap id g y)
+    -- Alternatively:
+    --   Comp (f' . f) id x (dimap g' g y)
 
 -- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ B.first f
-  first' (Comp f g a b) = Comp (\(x, c) ->
-                                  let (x', z) = f x in (x', (z, c)))
-                               (\(y, (z, x)) -> (g (y, z), x))
-                          a (first' b)
+  first' (Comp f g a b) =
+    Comp (\(x, c) ->
+             let (x', z) = f x in (x', (z, c)))
+         (\(y, (z, x)) -> (g (y, z), x))
+         a (first' b)
+{-- end Strong_FreerArrow --}
 
+{-- begin Category_FreerArrow --}
 -- |- Freer arrows are categories.
 instance Category (FreerArrow e) where
   id = Hom id
 
   f . (Hom g) = dimap g id f
   f . (Comp f' g' x y) = Comp f' g' x (f . y)
+{-- end Category_FreerArrow --}
   
 -- |- The type for effect handlers.
 type x ~> y = forall a b. x a b -> y a b
