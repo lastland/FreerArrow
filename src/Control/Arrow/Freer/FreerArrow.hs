@@ -17,8 +17,8 @@ import Prelude hiding (id, (.))
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
 data FreerArrow e x y where
   Hom :: (x -> y) -> FreerArrow e x y
-  Comp :: (x -> (a, c)) -> ((b, c) -> y) ->
-    e a b -> FreerArrow e y z -> FreerArrow e x z
+  Comp :: (x -> (a, c)) -> ((b, c) -> z) ->
+    e a b -> FreerArrow e z y -> FreerArrow e x y
 
 -- A function that counts the number of effects in a freer arrow. This
 -- illustrates that some static analysis can be performed on freer arrows. Even
@@ -50,7 +50,7 @@ instance Arrow (FreerArrow e) where
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where
   dimap f g (Hom h) = Hom (g . h . f)
-  dimap f g (Comp f' g' x y) = Comp (f' . f) id x (dimap g' g y)
+  dimap f g (Comp f' g' x y) = Comp (f' . f) g' x (dimap id g y)
 
 -- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrow e) where

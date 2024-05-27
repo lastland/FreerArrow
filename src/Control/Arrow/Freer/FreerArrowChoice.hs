@@ -45,7 +45,7 @@ instance ArrowChoice (FreerArrowChoice e) where
 
 instance Profunctor (FreerArrowChoice e) where
   dimap f g (Hom h) = Hom (g . h . f)
-  dimap f g (Comp f' g' x y) = Comp (f' . f) id x (dimap g' g y)
+  dimap f g (Comp f' g' x y) = Comp (f' . f) g' x (dimap id g y)
 
 instance Strong (FreerArrowChoice e) where
   first' (Hom f) = Hom $ B.first f
