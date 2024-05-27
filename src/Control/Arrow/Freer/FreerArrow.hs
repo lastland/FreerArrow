@@ -9,7 +9,6 @@ module Control.Arrow.Freer.FreerArrow where
 import qualified Data.Bifunctor as B (first)
 import Control.Category
 import Control.Arrow
-import Data.Kind
 import Data.Profunctor
 import Prelude hiding (id, (.))
 
@@ -56,8 +55,7 @@ instance Profunctor (FreerArrow e) where
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ B.first f
   first' (Comp f g a b) = Comp (\(x, c) ->
-                                  case f x of
-                                    (x', z) -> (x', (z, c)))
+                                  let (x', z) = f x in (x', (z, c)))
                                (\(y, (z, x)) -> (g (y, z), x))
                           a (first' b)
 
