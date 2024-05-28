@@ -90,10 +90,3 @@ interp :: (Profunctor arr, Arrow arr) =>
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y
-
-interp' :: (Profunctor arr, Arrow arr) =>
-  (e ~> arr) -> FreerArrow e x y -> IO (arr x y)
-interp' _       (Hom f) = pure $ arr f
-interp' handler (Comp f g x y) = do
-  (a, b) <- concurrently (pure $ dimap f g (first (handler x))) (interp' handler y)
-  pure (a >>> b)
