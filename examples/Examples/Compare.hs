@@ -15,7 +15,7 @@ import           System.TimeIt
 import           System.IO
 
 num :: Int
-num = 3000
+num = 10000000
 
 incNA :: Int -> FreerArrow (A.StateEff Int) Int Int
 incNA n | n > 0    = getState >>> lmap (+1) setState >>> incNA (n - 1)
@@ -61,6 +61,7 @@ compare = do
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
+  {--
   putStrLn "A (with concurrency):"
   a <- timeIt compileAConcurrently
   let s = runA 0 a
@@ -70,6 +71,7 @@ compare = do
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
+  --}
   putStrLn "M:"
   let m = compileM
   timeIt $ m `seq` pure ()

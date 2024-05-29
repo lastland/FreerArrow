@@ -61,6 +61,10 @@ instance Profunctor (FreerArrow e) where
     -- Alternatively:
     --   Comp (f' . f) id x (dimap g' g y)
 
+  -- lmap can be implemented more efficiently without recursion
+  lmap f (Hom h) = Hom (h . f)
+  lmap f (Comp f' g' x y) = Comp (f' . f) g' x y
+
 -- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ B.first f
@@ -76,7 +80,7 @@ instance Strong (FreerArrow e) where
 instance Category (FreerArrow e) where
   id = Hom id
 
-  f . (Hom g) = dimap g id f
+  f . (Hom g) = lmap g f
   f . (Comp f' g' x y) = Comp f' g' x (f . y)
 {-- end Category_FreerArrow --}
   
