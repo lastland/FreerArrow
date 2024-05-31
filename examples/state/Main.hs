@@ -1,7 +1,7 @@
 {-# LANGUAGE RankNTypes       #-}
 {-# LANGUAGE FlexibleContexts #-}
 
-module Examples.Compare where
+module Main where
 
 import qualified Examples.State  as A
 import qualified Examples.StateM as M
@@ -49,8 +49,8 @@ runA n a = A.runState a 0 n
 runM :: Int -> State Int Int -> (Int, Int)
 runM n m = runState m n
 
-compare :: IO ()
-compare = do
+main :: IO ()
+main = do
   putStrLn "A:"
   let a = compileA
   timeIt $ a `seq` pure ()

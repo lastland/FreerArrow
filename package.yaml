@@ -36,15 +36,26 @@ ghc-options:
 library:
   source-dirs:
   - src
-  - examples
   dependencies:
   - profunctors
-  - hxt
-  - timeit
-  - mtl
-  - async
   ghc-options:
   - -Wno-missing-export-lists
+
+executables:
+  Comparison:
+    main:                Main.hs
+    source-dirs:         examples/state
+    dependencies:
+    - FreerArrow
+    - profunctors
+    - timeit
+    - hxt
+    - mtl
+    - async
+    ghc-options:
+    - -Wno-missing-export-lists
+    - -Wno-unused-do-bind
+    - -Wno-name-shadowing
 
 
 tests:

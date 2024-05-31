@@ -3,49 +3,7 @@
 # For more information, please see the documentation at:
 #   https://docs.haskellstack.org/en/stable/lock_files
 
-packages:
-- completed:
-    hackage: lens-5.2.3@sha256:637287c76adff383063b3206a4213640de1a74839ec16008cc71b5b407f7d05e,15237
-    pantry-tree:
-      sha256: 2a69ee338ef79da9aaa0d406f8307b11e3b8f969aa8fc28e46ca250c1f6ef40d
-      size: 8351
-  original:
-    hackage: lens-5.2.3
-- completed:
-    hackage: profunctors-5.6.2@sha256:e178ba4468982326656626e2089e296f64485e68fdddc9f4476dcd5d612b4f78,2484
-    pantry-tree:
-      sha256: 477b4e6a997aa6d470a4355814c3c654641824dad07058ea77b20c2e9a7d7699
-      size: 1588
-  original:
-    hackage: profunctors-5.6.2
-- completed:
-    hackage: hxt-9.3.1.22@sha256:2d9b2ddda1bf8b1697a9443560a81991663cd8b73ebea4a8106ad025c1151704,9919
-    pantry-tree:
-      sha256: 85f1a15a17e91b9a0a6609b19537e925950bcabdb0900f6c5d8f813fa012bb8b
-      size: 10091
-  original:
-    hackage: hxt-9.3.1.22
-- completed:
-    hackage: timeit-2.0@sha256:35d7c3ce64b458bbb1200320203f21281c975c85acc636a634500601c474fded,1197
-    pantry-tree:
-      sha256: c37c98f2173d5c1a651483b90163cdb9384a6d76b0adb7dfad58cbc9e9b7be86
-      size: 259
-  original:
-    hackage: timeit-2.0@rev:2
-- completed:
-    hackage: mtl-2.3.1@sha256:5377696d7315e2ef31a8d15d67b22d733c20cac2caf8b26756ff8524c8217e6d,1868
-    pantry-tree:
-      sha256: ac3cf1dc9ef397512d4bf8f2c3fbe4d64fb8aabd253288b34bf86c09ae234d4f
-      size: 1853
-  original:
-    hackage: mtl-2.3.1
-- completed:
-    hackage: async-2.2.5@sha256:9d5d9e605f52958d099e13a8b8f30ee56cb137c9192996245e3c533adb682cf8,3280
-    pantry-tree:
-      sha256: 69bb0be6b21b8c73adb6345631cfdec5d6c22d3dff1041db9f5258dd04367d37
-      size: 578
-  original:
-    hackage: async-2.2.5@rev:1
+packages: []
 snapshots:
 - completed:
     sha256: 4be1ca5d31689b524a7f0f17a439bbe9136465213edc498e9a395899a670f2aa
