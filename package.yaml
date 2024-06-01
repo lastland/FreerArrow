@@ -57,6 +57,16 @@ executables:
     - -Wno-unused-do-bind
     - -Wno-name-shadowing
 
+  Imp:
+    main:                Main.hs 
+    source-dirs:         examples/imp
+    dependencies:
+    - FreerArrow
+    - profunctors
+    - containers
+    ghc-options:
+    - -Wno-missing-export-lists
+
 
 tests:
   FreerArrow-test:

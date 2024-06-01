@@ -27,6 +27,8 @@ library
   exposed-modules:
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
+      Control.Arrow.Freer.Sum2
+      Control.Arrow.State.ArrowState
   other-modules:
       Paths_FreerArrow
   autogen-modules:
@@ -58,6 +60,24 @@ executable Comparison
     , mtl
     , profunctors
     , timeit
+  default-language: Haskell2010
+
+executable Imp
+  main-is: Main.hs
+  other-modules:
+      Imp.Arrow.FreeImp
+      Imp.AST
+      Paths_FreerArrow
+  autogen-modules:
+      Paths_FreerArrow
+  hs-source-dirs:
+      examples/imp
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
+  build-depends:
+      FreerArrow
+    , base >=4.7 && <5
+    , containers
+    , profunctors
   default-language: Haskell2010
 
 test-suite FreerArrow-test
