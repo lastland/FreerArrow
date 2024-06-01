@@ -28,3 +28,7 @@ instance Inj2 (StateEff s) e => ArrowState s (FreerArrow e) where
 data StateEff :: Type -> Type -> Type -> Type where
   Get :: StateEff s a s
   Put :: StateEff s s s
+
+handleState :: ArrowState s a => StateEff s x y -> a x y
+handleState Get = get
+handleState Put = put

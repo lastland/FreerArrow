@@ -21,6 +21,12 @@ data BExp =
   | BAnd BExp BExp
   deriving (Eq, Show)
 
+data Com' =
+    CSkip'
+  | CAssign' Var AExp
+  | CSeq' Com' Com'
+  deriving (Eq, Show)
+
 data Com =
     CSkip
   | CAssign Var AExp

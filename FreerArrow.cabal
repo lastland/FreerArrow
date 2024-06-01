@@ -65,7 +65,7 @@ executable Comparison
 executable Imp
   main-is: Main.hs
   other-modules:
-      Imp.Arrow.FreeImp
+      Imp.Arrow.FreeWeakImp
       Imp.AST
       Paths_FreerArrow
   autogen-modules:
