@@ -29,6 +29,9 @@ library
       Control.Arrow.Freer.FreerArrowChoice
       Control.Arrow.Freer.Sum2
       Control.Arrow.State.ArrowState
+      Control.Monad.Freer.FreerMonad
+      Control.Monad.Freer.Sum1
+      Control.Monad.State.StateEff
   other-modules:
       Paths_FreerArrow
   autogen-modules:
@@ -38,6 +41,7 @@ library
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
       base >=4.7 && <5
+    , mtl
     , profunctors
   default-language: Haskell2010
 
@@ -67,6 +71,7 @@ executable Imp
   other-modules:
       Imp.Arrow.FreeWeakImp
       Imp.AST
+      Imp.Monad.FreeWeakImp
       Paths_FreerArrow
   autogen-modules:
       Paths_FreerArrow

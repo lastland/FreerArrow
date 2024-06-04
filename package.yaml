@@ -38,6 +38,7 @@ library:
   - src
   dependencies:
   - profunctors
+  - mtl
   ghc-options:
   - -Wno-missing-export-lists
 
