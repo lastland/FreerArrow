@@ -36,6 +36,12 @@ Section Arrows.
     | Comp f' g' x y => Comp (fun x => f' (f x)) g' x (dimap id g y)
     end.
 
+  Definition lmap (f : A -> X) (x : FreerArrow E X Y) : FreerArrow E A Y :=
+    match x with
+    | Hom h => Hom (fun x => h (f x))
+    | Comp f' g' x y => Comp (fun x => f' (f x)) g' x y
+    end.
+
   Fixpoint first' {X Y A} (x : FreerArrow E X Y) : FreerArrow E (X * A) (Y * A) :=
     match x with
     | Hom f => Hom (fun '(x, a) => (f x, a))
@@ -76,11 +82,10 @@ Inductive Similar {E X X' Y} :
     Comp f g e a ≈ Comp f' g' e' a'
 where "x ≈ y" := (Similar x y).
 
-Section ArrowsLaws.
+Section ProfunctorLaws.
 
   Context {E :Type -> Type -> Type}.
   Context {X Y Z A B: Type}.
-  Parameters (f : X -> Y) (g : Y -> Z).
 
   (* Profunctor laws. *)
 
@@ -97,6 +102,30 @@ Section ArrowsLaws.
     intros. cbn. f_equal.
     apply IHx.
   Qed.
+
+End ProfunctorLaws.
+
+#[export]
+Hint Resolve dimap_id : freer_arrow.
+
+#[export]
+Hint Resolve dimap_dimap : freer_arrow. 
+
+Section ArrowsLaws.
+
+  Context {E :Type -> Type -> Type}.
+  Context {X Y Z A B: Type}.
+  Parameters (f : X -> Y) (g : Y -> Z).
+
+  (* lmap and dimap *)
+
+  Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrow E X Y),
+      lmap f x = dimap f id x.
+  Proof.
+    induction x; cbn; [reflexivity |].
+    f_equal. symmetry. apply dimap_id.
+  Qed.
+    
 
   (* Arrow laws. *)
 
@@ -134,7 +163,8 @@ Section ArrowsLaws.
   Proof.
     induction a; cbn.
     - f_equal. extensionality a. destruct a as []; cbn. reflexivity.
-    - (* Existential types do not match. *)
+    - unfold arr. 
+      (* Existential types do not match. *)
   Abort.
 
   Definition assoc {X Y Z} (p : (X * Y * Z)) : (X * (Y * Z)) :=
