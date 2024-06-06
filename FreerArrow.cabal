@@ -34,6 +34,7 @@ library
       Control.Monad.Freer.FreerMonad
       Control.Monad.Freer.FreerMonadFinal
       Control.Monad.Freer.Sum1
+      Control.Monad.State.MonadState
       Control.Monad.State.StateEff
   other-modules:
       Paths_FreerArrow
@@ -52,7 +53,6 @@ executable Comparison
   main-is: Main.hs
   other-modules:
       Examples.State
-      Examples.StateM
       Paths_FreerArrow
   autogen-modules:
       Paths_FreerArrow
@@ -63,7 +63,6 @@ executable Comparison
       FreerArrow
     , async
     , base >=4.7 && <5
-    , hxt
     , mtl
     , profunctors
     , timeit

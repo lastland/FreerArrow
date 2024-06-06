@@ -22,6 +22,7 @@ import Control.Arrow.Freer.Sum2
 import Control.Monad.State (State)
 import Control.Monad.State.StateEff
 import Data.Kind
+import Data.Profunctor
 import Prelude hiding (id, (.))
 
 class Arrow a => ArrowState s a where
@@ -32,7 +33,7 @@ modify :: ArrowState s a => (s -> b -> s) -> a b s
 modify f = arr (\b -> (b, b)) >>> first get >>> arr (uncurry f)
 
 newtype StateA s a b = StateA (Kleisli (State s) a b)
-  deriving (Category, Arrow)
+  deriving (Category, Arrow, ArrowChoice, ArrowApply, Profunctor, Strong, Choice)
 
 -- |- StateA is an ArrowState
 instance ArrowState s (StateA s) where
@@ -49,7 +50,7 @@ instance Inj2 (StateEff s) e => ArrowState s (FreerArrowChoice e) where
   put = C.embed $ inj2 Put
 
 instance Inj1 (StateEff1 s) e => ArrowState s (KleisliFreer e) where
-  get = K.embed $ inj1 . Get1
+  get = K.embed $ const $ inj1 Get1
   put = K.embed $ inj1 . Put1
 
 -- |- An ADT for stateful effect.
