@@ -32,6 +32,7 @@ library
       Control.Arrow.Freer.Sum2
       Control.Arrow.State.ArrowState
       Control.Monad.Freer.FreerMonad
+      Control.Monad.Freer.FreerMonadFinal
       Control.Monad.Freer.Sum1
       Control.Monad.State.StateEff
   other-modules:
