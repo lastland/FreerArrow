@@ -21,10 +21,17 @@ data BExp =
   | BAnd BExp BExp
   deriving (Eq, Show)
 
-data Com' =
+data WeakCom =
     CSkip'
   | CAssign' Var AExp
-  | CSeq' Com' Com'
+  | CSeq' WeakCom WeakCom
+  deriving (Eq, Show)
+
+data ComIf =
+    CSkip''
+  | CAssign'' Var AExp
+  | CSeq'' ComIf ComIf
+  | CIf'' BExp ComIf ComIf
   deriving (Eq, Show)
 
 data Com =

@@ -9,9 +9,12 @@
 module Control.Arrow.State.ArrowState where
 
 import qualified Control.Monad.State as M
+import qualified Control.Arrow.Freer.FreerArrowChoice as C
+
 import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
+import Control.Arrow.Freer.FreerArrowChoice (FreerArrowChoice)
 import Control.Arrow.Freer.Sum2
 import Control.Monad.State (State)
 import Data.Kind
@@ -35,6 +38,10 @@ instance ArrowState s (StateA s) where
 instance Inj2 (StateEff s) e => ArrowState s (FreerArrow e) where
   get = embed $ inj2 Get
   put = embed $ inj2 Put
+
+instance Inj2 (StateEff s) e => ArrowState s (FreerArrowChoice e) where
+  get = C.embed $ inj2 Get
+  put = C.embed $ inj2 Put
 
 -- |- An ADT for stateful effect.
 data StateEff :: Type -> Type -> Type -> Type where
