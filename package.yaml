@@ -58,6 +58,15 @@ executables:
     - -Wno-unused-do-bind
     - -Wno-name-shadowing
 
+  Exception:
+    main:                Main.hs
+    source-dirs:         examples/exception
+    dependencies:
+    - FreerArrow
+    - profunctors
+    ghc-options:
+    - -Wno-missing-export-lists
+
   Imp:
     main:                Main.hs 
     source-dirs:         examples/imp
