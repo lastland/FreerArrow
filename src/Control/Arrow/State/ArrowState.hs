@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,6 +9,7 @@
 module Control.Arrow.State.ArrowState where
 
 import qualified Control.Monad.State as M
+import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
 import Control.Arrow.Freer.Sum2
@@ -21,10 +23,13 @@ class Arrow a => ArrowState s a where
 modify :: ArrowState s a => (s -> b -> s) -> a b s 
 modify f = arr (\b -> (b, b)) >>> first get >>> arr (uncurry f)
 
--- |- State is an ArrowState
-instance ArrowState s (Kleisli (State s)) where
-  get = Kleisli $ const M.get
-  put = Kleisli $ \s -> M.put s >> return s
+newtype StateA s a b = StateA (Kleisli (State s) a b)
+  deriving (Category, Arrow)
+
+-- |- StateA is an ArrowState
+instance ArrowState s (StateA s) where
+  get = StateA $ Kleisli $ const M.get
+  put = StateA $ Kleisli $ \s -> M.put s >> return s
 
 -- |- A freer arrow is an ArrowState.
 instance Inj2 (StateEff s) e => ArrowState s (FreerArrow e) where

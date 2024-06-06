@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -8,6 +9,7 @@
 module Control.Arrow.Exception.ArrowException where
 
 import qualified Control.Arrow.Freer.FreerArrowChoice as C
+import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
 import Control.Arrow.Freer.FreerArrowChoice (FreerArrowChoice)
@@ -19,18 +21,22 @@ class Arrow a => ArrowException e a where
   throwError :: a e x
 
 class ArrowException e a => ArrowCatch e a where
-  catchError :: a x y -> a e y -> a x y 
+  catchError :: a x y -> a e y -> a x y
 
--- |- Either is an ArrowException.
-instance ArrowException e (Kleisli (Either e)) where
-  throwError = Kleisli Left
+newtype EitherA e a b = EitherA (Kleisli (Either e) a b)
+  deriving (Category, Arrow)
 
--- |- Either is also an ArrowCatch.
-instance ArrowCatch e (Kleisli (Either e)) where
-  catchError (Kleisli f) (Kleisli h) = Kleisli $
-    \x -> case f x of
-      Left e  -> h e
-      Right y -> Right y
+-- |- EitherA is an ArrowException.
+instance ArrowException e (EitherA e) where
+  throwError = EitherA $ Kleisli Left
+
+-- |- EitherA is also an ArrowCatch.
+instance ArrowCatch e (EitherA e) where
+  catchError (EitherA (Kleisli f)) (EitherA (Kleisli h)) =
+    EitherA $ Kleisli $
+        \x -> case f x of
+          Left e  -> h e
+          Right y -> Right y
 
 -- |- An ADT for exception effect.
 data ExceptionEff :: Type -> Type -> Type -> Type where
