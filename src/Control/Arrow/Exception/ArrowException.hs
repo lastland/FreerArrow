@@ -66,8 +66,8 @@ catchErrorFC :: FreerArrowChoice (Ex ex e) x y ->
                 FreerArrowChoice (Ex ex e) ex y ->
                 FreerArrowChoice (Ex ex e) x y
 catchErrorFC (C.Hom f) _                   = C.Hom f 
-catchErrorFC (C.Comp f g (Inl2 Throw) x) h = C.Comp f' g' (Inl2 Throw) (h ||| x)
-  where f' e = case f e of
+catchErrorFC (C.Comp f g (Inl2 Throw) k) h = C.Comp f' g' (Inl2 Throw) (h ||| k)
+  where f' x = case f x of
           Left (e, c) -> Left (e, (e, c))
           Right w     -> Right w
         g' (Left (_, (e, _))) = Left e
