@@ -28,9 +28,11 @@ library
       Control.Arrow.Exception.ArrowException
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
+      Control.Arrow.Freer.FreerArrowFinal
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Sum2
       Control.Arrow.State.ArrowState
+      Control.Arrow.State.AState
       Control.Monad.Freer.FreerMonad
       Control.Monad.Freer.FreerMonadFinal
       Control.Monad.Freer.Sum1
