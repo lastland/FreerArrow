@@ -67,22 +67,6 @@ executable Comparison
     , timeit
   default-language: Haskell2010
 
-executable Exception
-  main-is: Main.hs
-  other-modules:
-      Exception
-      Paths_FreerArrow
-  autogen-modules:
-      Paths_FreerArrow
-  hs-source-dirs:
-      examples/exception
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
-  build-depends:
-      FreerArrow
-    , base >=4.7 && <5
-    , profunctors
-  default-language: Haskell2010
-
 executable Imp
   main-is: Main.hs
   other-modules:

@@ -16,4 +16,3 @@ data StateEff :: Type -> Type -> Type where
   Get :: StateEff s s
   Put :: s -> StateEff s ()
 
-instance Inj1 (StateEff s) e => MonadState s (FreerMonad e) where

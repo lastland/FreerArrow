@@ -11,6 +11,7 @@ import qualified Control.Monad.State as M
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
 import Control.Arrow.Freer.Sum2
+import Control.Monad.State (State)
 import Data.Kind
 
 class Arrow a => ArrowState s a where
@@ -21,7 +22,7 @@ modify :: ArrowState s a => (s -> b -> s) -> a b s
 modify f = arr (\b -> (b, b)) >>> first get >>> arr (uncurry f)
 
 -- |- State is an ArrowState
-instance ArrowState s (Kleisli (M.State s)) where
+instance ArrowState s (Kleisli (State s)) where
   get = Kleisli $ const M.get
   put = Kleisli $ \s -> M.put s >> return s
 
