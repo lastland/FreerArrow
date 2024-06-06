@@ -65,6 +65,7 @@ executables:
     - FreerArrow
     - profunctors
     - containers
+    - mtl
     ghc-options:
     - -Wno-missing-export-lists
 

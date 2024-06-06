@@ -20,6 +20,7 @@ import Control.Arrow.Freer.KleisliFreer     (KleisliFreer)
 import Control.Monad.Freer.Sum1
 import Control.Arrow.Freer.Sum2
 import Control.Monad.State (State)
+import Control.Monad.State.StateEff
 import Data.Kind
 import Prelude hiding (id, (.))
 
@@ -56,10 +57,6 @@ data StateEff :: Type -> Type -> Type -> Type where
   Get :: StateEff s a s
   Put :: StateEff s s s
 
-data StateEff1 :: Type -> Type -> Type where
-  Get1 :: a -> StateEff1 s s
-  Put1 :: s -> StateEff1 s s
-  
 handleState :: ArrowState s a => StateEff s x y -> a x y
 handleState Get = get
 handleState Put = put

@@ -1,18 +1,15 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE UndecidableInstances #-}
 
 module Control.Monad.State.StateEff where
 
-import Control.Monad.Freer.FreerMonad
-import Control.Monad.Freer.Sum1
 import Control.Monad.State
 import Data.Kind
 
-data StateEff :: Type -> Type -> Type where
-  Get :: StateEff s s
-  Put :: s -> StateEff s ()
+data StateEff1 :: Type -> Type -> Type where
+  Get1 :: a -> StateEff1 s s
+  Put1 :: s -> StateEff1 s s  
 
+handleState1 :: MonadState s m => StateEff1 s a -> m a 
+handleState1 (Get1 _) = get
+handleState1 (Put1 x) = put x >> return x

@@ -28,4 +28,3 @@ interp :: Monad m =>
   (forall x. e x -> m x) -> FreerMonad e a -> m a
 interp _       (Ret x)    = return x
 interp handler (Bind e k) = handler e >>= interp handler . k
-

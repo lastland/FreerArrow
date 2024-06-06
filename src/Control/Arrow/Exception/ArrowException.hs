@@ -87,12 +87,13 @@ catchErrorFC (C.Comp f g (Inl2 Throw) k) h = C.Comp f' g' (Inl2 Throw) (h ||| k)
         g' (Right w)          = Right $ g (Right w)
 catchErrorFC (C.Comp f g e x) h            = C.Comp f g e $ catchErrorFC x h
 
+-- This only works when [ExceptionEff1] is the leftmost effect.
 catchErrorK :: KleisliFreer (Ex1 ex e) x y ->
                KleisliFreer (Ex1 ex e) ex y ->
                KleisliFreer (Ex1 ex e) x y
 catchErrorK (KleisliFreer (Kleisli f)) (KleisliFreer (Kleisli h)) =
   KleisliFreer $ Kleisli $ go f h
-  where go :: forall x y ex e.
+  where go :: forall ex e x y.
               (x -> FreerMonad (Ex1 ex e) y) ->
               (ex -> FreerMonad (Ex1 ex e) y) ->
               x -> FreerMonad (Ex1 ex e) y 
@@ -100,7 +101,7 @@ catchErrorK (KleisliFreer (Kleisli f)) (KleisliFreer (Kleisli h)) =
                      Ret r -> Ret r
                      Bind (Inl1 (Throw1 e)) _ -> h e
                      Bind e                 k -> Bind e (go k h) 
-                             
+
 
 handleException :: ArrowException e a => ExceptionEff e x y -> a x y
 handleException Throw = throwError
