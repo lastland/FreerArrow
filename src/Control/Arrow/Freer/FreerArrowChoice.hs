@@ -54,28 +54,25 @@ instance Profunctor (FreerArrowChoice e) where
 
 instance Strong (FreerArrowChoice e) where
   first' (Hom f) = Hom $ B.first f
-  first' (Comp f g a b) = Comp (\(x, c) ->
-                                  case f x of
-                                    Left (x', z) -> Left (x', (z, c))
-                                    Right x' -> Right (x', c))
-                               (\case
-                                   Left (y, (z, x)) -> (g (Left (y, z)), x)
-                                   Right (y, z) -> (g (Right y), z))
-                          a (first' b)
+  first' (Comp f g a b) = Comp f' g' a (first' b)
+      where f' (x, c) = case f x of
+              Left (x', z) -> Left (x', (z, c))
+              Right x' -> Right (x', c)
+            g' (Left (y, (z, x))) = (g (Left (y, z)), x)
+            g' (Right (y, z))     = (g (Right y), z)
 
 instance Choice (FreerArrowChoice e) where
   left' (Hom f) = Hom $ \case
     Left x -> Left $ f x
     Right y -> Right y
-  left' (Comp f g a b) = Comp (\case
-                                  Left x -> case f x of
-                                    Left (x', z) -> Left (x', z)
-                                    Right w -> Right (Left w)
-                                  Right y -> Right (Right y))
-                              (\case
-                                  Left (y, z) -> Left $ g (Left (y, z))
-                                  Right (Left w) -> Left $ g (Right w)
-                                  Right (Right y) -> Right y) a (left' b) 
+  left' (Comp f g a b) = Comp f' g' a (left' b)
+        where f' (Left x)  = case f x of
+                               Left (x', z) -> Left (x', z)
+                               Right w -> Right (Left w)
+              f' (Right y) = Right (Right y)
+              g' (Left (y, z))     = Left $ g (Left (y, z))
+              g' (Right (Left w))  = Left $ g (Right w)
+              g' (Right (Right y)) = Right y
 
 instance Category (FreerArrowChoice e) where
   id = Hom id
