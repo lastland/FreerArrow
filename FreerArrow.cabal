@@ -71,7 +71,7 @@ executable Comparison
 executable Imp
   main-is: Main.hs
   other-modules:
-      Imp.Arrow.FreeIfImp
+      Imp.Arrow.FreeImp
       Imp.Arrow.FreeImpWithK
       Imp.Arrow.FreeWeakImp
       Imp.AST

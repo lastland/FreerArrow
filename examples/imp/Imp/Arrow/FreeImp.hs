@@ -1,13 +1,15 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Imp.Arrow.FreeIfImp where
+module Imp.Arrow.FreeImp where
 
+import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrowChoice
 import Control.Arrow.Freer.Sum2
 import Control.Arrow.State.ArrowState
 import Data.Profunctor
 import Data.Map
+import Prelude hiding (id, (.))
 import Imp.AST
 
 type Env = Map Var Int
@@ -29,16 +31,20 @@ beval (BGt  a b) = aeval a &&& aeval b >>> arr (uncurry (>))
 beval (BNot a) = beval a >>> arr not
 beval (BAnd a b) = beval a &&& beval b >>> arr (uncurry (&&))
 
-denote :: Inj2 (StateEff Env) e => ComIf -> FreerArrowChoice e a ()
-denote CSkip''         = arr $ const ()
-denote (CAssign'' v a) = aeval a &&& get >>>
-                         arr (uncurry $ insert v) >>>
-                         put >>> arr (const ())
-denote (CSeq'' a b)    = denote a >>> denote b
-denote (CIf'' c x y)   = beval c >>>
-                         arr (\b -> if b then Left () else Right ()) >>>
-                         denote x ||| denote y
+denote :: Inj2 (StateEff Env) e => Com -> FreerArrowChoice e () ()
+denote CSkip         = id
+denote (CAssign v a) = aeval a &&& get >>>
+                       arr (uncurry $ insert v) >>>
+                       put >>> arr (const ())
+denote (CSeq a b)    = denote a >>> denote b
+denote (CIf c x y)   = beval c >>>
+                       arr (\b -> if b then Left () else Right ()) >>>
+                       denote x ||| denote y
+denote (CWhile c x)  = go
+        where go = beval c >>>
+                   arr (\b -> if b then Left () else Right ()) >>>
+                   (denote x >>> go) ||| arr (const ())
 
-compileWeakImp :: (Profunctor a, ArrowChoice a, ArrowState Env a) =>
+compileImp :: (Profunctor a, ArrowChoice a, ArrowState Env a) =>
   FreerArrowChoice (StateEff Env) x y -> a x y 
-compileWeakImp = interp handleState
+compileImp = interp handleState
