@@ -1,6 +1,7 @@
 {-# LANGUAGE GADTs #-}
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE FlexibleContexts #-}
@@ -9,10 +10,15 @@
 module Control.Arrow.Exception.ArrowException where
 
 import qualified Control.Arrow.Freer.FreerArrowChoice as C
+import qualified Control.Arrow.Freer.KleisliFreer as K
+
 import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
 import Control.Arrow.Freer.FreerArrowChoice (FreerArrowChoice)
+import Control.Arrow.Freer.KleisliFreer     (KleisliFreer(..))
+import Control.Monad.Freer.FreerMonad       (FreerMonad(..))
+import Control.Monad.Freer.Sum1
 import Control.Arrow.Freer.Sum2
 import Data.Kind
 import Prelude hiding (id, (.))
@@ -41,6 +47,9 @@ instance ArrowCatch e (EitherA e) where
 -- |- An ADT for exception effect.
 data ExceptionEff :: Type -> Type -> Type -> Type where
   Throw :: ExceptionEff e e a
+  
+data ExceptionEff1 :: Type -> Type -> Type where
+  Throw1 :: e -> ExceptionEff1 e a
 
 -- |- A freer arrow is an ArrowException. (But it is not an [ArrowCatch].)
 instance Inj2 (ExceptionEff ex) e => ArrowException ex (FreerArrow e) where
@@ -49,7 +58,11 @@ instance Inj2 (ExceptionEff ex) e => ArrowException ex (FreerArrow e) where
 instance Inj2 (ExceptionEff ex) e => ArrowException ex (FreerArrowChoice e) where
   throwError = C.embed $ inj2 Throw
 
-type Ex ex e = Sum2 (ExceptionEff ex) e
+instance Inj1 (ExceptionEff1 ex) e => ArrowException ex (KleisliFreer e) where
+  throwError = K.embed $ inj1 . Throw1
+
+type Ex  ex e = Sum2 (ExceptionEff  ex) e
+type Ex1 ex e = Sum1 (ExceptionEff1 ex) e 
 
 -- This only works when [ExceptionEff] is the leftmost effect.
 catchErrorF :: FreerArrow (Ex ex e) x y ->
@@ -73,6 +86,21 @@ catchErrorFC (C.Comp f g (Inl2 Throw) k) h = C.Comp f' g' (Inl2 Throw) (h ||| k)
         g' (Left (_, (e, _))) = Left e
         g' (Right w)          = Right $ g (Right w)
 catchErrorFC (C.Comp f g e x) h            = C.Comp f g e $ catchErrorFC x h
+
+catchErrorK :: KleisliFreer (Ex1 ex e) x y ->
+               KleisliFreer (Ex1 ex e) ex y ->
+               KleisliFreer (Ex1 ex e) x y
+catchErrorK (KleisliFreer (Kleisli f)) (KleisliFreer (Kleisli h)) =
+  KleisliFreer $ Kleisli $ go f h
+  where go :: forall x y ex e.
+              (x -> FreerMonad (Ex1 ex e) y) ->
+              (ex -> FreerMonad (Ex1 ex e) y) ->
+              x -> FreerMonad (Ex1 ex e) y 
+        go f h x = case f x of
+                     Ret r -> Ret r
+                     Bind (Inl1 (Throw1 e)) _ -> h e
+                     Bind e                 k -> Bind e (go k h) 
+                             
 
 handleException :: ArrowException e a => ExceptionEff e x y -> a x y
 handleException Throw = throwError

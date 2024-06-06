@@ -10,14 +10,18 @@ module Control.Arrow.State.ArrowState where
 
 import qualified Control.Monad.State as M
 import qualified Control.Arrow.Freer.FreerArrowChoice as C
+import qualified Control.Arrow.Freer.KleisliFreer as K
 
 import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
 import Control.Arrow.Freer.FreerArrowChoice (FreerArrowChoice)
+import Control.Arrow.Freer.KleisliFreer     (KleisliFreer)
+import Control.Monad.Freer.Sum1
 import Control.Arrow.Freer.Sum2
 import Control.Monad.State (State)
 import Data.Kind
+import Prelude hiding (id, (.))
 
 class Arrow a => ArrowState s a where
   get :: a b s
@@ -43,11 +47,19 @@ instance Inj2 (StateEff s) e => ArrowState s (FreerArrowChoice e) where
   get = C.embed $ inj2 Get
   put = C.embed $ inj2 Put
 
+instance Inj1 (StateEff1 s) e => ArrowState s (KleisliFreer e) where
+  get = K.embed $ inj1 . Get1
+  put = K.embed $ inj1 . Put1
+
 -- |- An ADT for stateful effect.
 data StateEff :: Type -> Type -> Type -> Type where
   Get :: StateEff s a s
   Put :: StateEff s s s
 
+data StateEff1 :: Type -> Type -> Type where
+  Get1 :: a -> StateEff1 s s
+  Put1 :: s -> StateEff1 s s
+  
 handleState :: ArrowState s a => StateEff s x y -> a x y
 handleState Get = get
 handleState Put = put

@@ -28,6 +28,7 @@ library
       Control.Arrow.Exception.ArrowException
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
+      Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Sum2
       Control.Arrow.State.ArrowState
       Control.Monad.Freer.FreerMonad
