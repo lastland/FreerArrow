@@ -9,7 +9,6 @@ module Control.Arrow.Freer.FreerArrowChoice where
 import qualified Data.Bifunctor as B (first)
 import Control.Category
 import Control.Arrow
-import Data.Kind
 import Data.Profunctor
 import Prelude hiding (id, (.))
 
@@ -18,6 +17,8 @@ import Prelude hiding (id, (.))
 {-- begin FreerArrowChoice --}
 data FreerArrowChoice e x y where
   Hom :: (x -> y) -> FreerArrowChoice e x y
+  -- TODO: Perhaps the code would be simpler if we use [Either w (a, c)] instead
+  -- of [Either (a, c) w] because the former is a monad/applicative/functor.
   Comp :: (x -> Either (a, c) w) ->
           (Either (b, c) w -> z) ->
           e a b ->
@@ -52,58 +53,36 @@ instance Profunctor (FreerArrowChoice e) where
   dimap f g (Hom h) = Hom (g . h . f)
   dimap f g (Comp f' g' x y) = Comp (f' . f) g' x (dimap id g y)
 
+  lmap f (Hom h) = Hom (h . f)
+  lmap f (Comp f' g' x y) = Comp (f' . f) g' x y
+
 instance Strong (FreerArrowChoice e) where
   first' (Hom f) = Hom $ B.first f
-  first' (Comp f g a b) = Comp (\(x, c) ->
-                                  case f x of
-                                    Left (x', z) -> Left (x', (z, c))
-                                    Right x' -> Right (x', c))
-                               (\case
-                                   Left (y, (z, x)) -> (g (Left (y, z)), x)
-                                   Right (y, z) -> (g (Right y), z))
-                          a (first' b)
+  first' (Comp f g a b) = Comp f' g' a (first' b)
+      where f' (x, c) = case f x of
+              Left (x', z) -> Left (x', (z, c))
+              Right x' -> Right (x', c)
+            g' (Left (y, (z, x))) = (g (Left (y, z)), x)
+            g' (Right (y, z))     = (g (Right y), z)
 
 instance Choice (FreerArrowChoice e) where
   left' (Hom f) = Hom $ \case
     Left x -> Left $ f x
     Right y -> Right y
-  left' (Comp f g a b) = Comp (\case
-                                  Left x -> case f x of
-                                    Left (x', z) -> Left (x', z)
-                                    Right w -> Right (Left w)
-                                  Right y -> Right (Right y))
-                              (\case
-                                  Left (y, z) -> Left $ g (Left (y, z))
-                                  Right (Left w) -> Left $ g (Right w)
-                                  Right (Right y) -> Right y) a (left' b) 
+  left' (Comp f g a b) = Comp f' g' a (left' b)
+        where f' (Left x)  = case f x of
+                               Left (x', z) -> Left (x', z)
+                               Right w -> Right (Left w)
+              f' (Right y) = Right (Right y)
+              g' (Left (y, z))     = Left $ g (Left (y, z))
+              g' (Right (Left w))  = Left $ g (Right w)
+              g' (Right (Right y)) = Right y
 
 instance Category (FreerArrowChoice e) where
   id = Hom id
 
-  f . (Hom g) = dimap g id f
+  f . (Hom g)          = lmap g f
   f . (Comp f' g' x y) = Comp f' g' x (f . y)
-  
-
-data StateEff :: Type -> Type -> Type -> Type where
-  Get :: StateEff s () s
-  Put :: StateEff s s ()
-
-get :: FreerArrowChoice (StateEff s) () s
-get = embed Get
-
-put :: FreerArrowChoice (StateEff s) s ()
-put = embed Put
-
-echo :: FreerArrowChoice (StateEff s) () ()
-echo = get >>> put
-
-echo2 :: FreerArrowChoice (StateEff s) () ((), ())
-echo2 = get >>> put &&& put
-
-echoWithIf :: FreerArrowChoice (StateEff s) Bool (Either ((), ()) ())
-echoWithIf = lmap (\case
-                 True -> Left ()
-                 False -> Right ()) (left echo2) 
 
 type x ~> y = forall a b. x a b -> y a b
 

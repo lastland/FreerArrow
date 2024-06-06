@@ -1,27 +1,26 @@
 {-# LANGUAGE FlexibleContexts #-}
 
-module Imp.Arrow.FreeImp where
+module Imp.Arrow.FreeImpWithK where
 
-import Control.Category
 import Control.Arrow
-import Control.Arrow.Freer.FreerArrowChoice
-import Control.Arrow.Freer.Sum2
+import Control.Arrow.Freer.KleisliFreer
 import Control.Arrow.State.ArrowState
-import Data.Profunctor
+import Control.Monad.Freer.Sum1
+import Control.Monad.State (MonadState)
+import Control.Monad.State.StateEff
 import Data.Map
-import Prelude hiding (id, (.))
 import Imp.AST
 
 type Env = Map Var Int
 
-aeval :: Inj2 (StateEff Env) e => AExp -> FreerArrowChoice e a Int
+aeval :: Inj1 (StateEff1 Env) e => AExp -> KleisliFreer e a Int
 aeval (ANum n) = arr $ const n 
 aeval (AId v)  = get >>> arr (findWithDefault 0 v)
 aeval (APlus  a b) = aeval a &&& aeval b >>> arr (uncurry (+))
 aeval (AMinus a b) = aeval a &&& aeval b >>> arr (uncurry (-))
 aeval (AMult  a b) = aeval a &&& aeval b >>> arr (uncurry (*))
 
-beval :: Inj2 (StateEff Env) e => BExp -> FreerArrowChoice e a Bool
+beval :: Inj1 (StateEff1 Env) e => BExp -> KleisliFreer e a Bool
 beval BTrue  = arr $ const True
 beval BFalse = arr $ const False
 beval (BEq  a b) = aeval a &&& aeval b >>> arr (uncurry (==))
@@ -31,8 +30,8 @@ beval (BGt  a b) = aeval a &&& aeval b >>> arr (uncurry (>))
 beval (BNot a) = beval a >>> arr not
 beval (BAnd a b) = beval a &&& beval b >>> arr (uncurry (&&))
 
-denote :: Inj2 (StateEff Env) e => Com -> FreerArrowChoice e () ()
-denote CSkip         = id
+denote :: Inj1 (StateEff1 Env) e => Com -> KleisliFreer e a ()
+denote CSkip         = arr $ const ()
 denote (CAssign v a) = aeval a &&& get >>>
                        arr (uncurry $ insert v) >>>
                        put >>> arr (const ())
@@ -40,11 +39,10 @@ denote (CSeq a b)    = denote a >>> denote b
 denote (CIf c x y)   = beval c >>>
                        arr (\b -> if b then Left () else Right ()) >>>
                        denote x ||| denote y
-denote (CWhile c x)  = go
-        where go = beval c >>>
-                   arr (\b -> if b then Left () else Right ()) >>>
-                   (denote x >>> go) ||| arr (const ())
+denote (CWhile c x)  = beval c >>>
+                       arr (\b -> if b then Left () else Right ()) >>>
+                       (denote x >>> denote (CWhile c x)) ||| arr (const ())
 
-compileImp :: (Profunctor a, ArrowChoice a, ArrowState Env a) =>
-  FreerArrowChoice (StateEff Env) x y -> a x y 
-compileImp = interp handleState
+compileImp :: MonadState Env m => KleisliFreer (StateEff1 Env) x y -> x -> m y
+compileImp f = case interp handleState1 f of
+                 Kleisli g -> g

@@ -3,14 +3,15 @@
 
 module Main where
 
-import qualified Examples.State  as A
-import qualified Examples.StateM as M
+import qualified Examples.State                 as A
+import qualified Control.Monad.Freer.FreerMonad as M
 import           Control.Arrow
 import           Control.Arrow.ArrowState
 import           Control.Arrow.Freer.FreerArrow
 import           Control.Concurrent.Async
 import           Control.Monad.State
 import           Data.Profunctor
+import           Examples.StateM 
 import           System.TimeIt
 import           System.IO
 
@@ -21,7 +22,7 @@ incNA :: Int -> FreerArrow (A.StateEff Int) Int Int
 incNA n | n > 0    = getState >>> lmap (+1) setState >>> incNA (n - 1)
         | otherwise = getState
 
-incNM :: Int -> M.FreerMonad (M.StateMEff Int) Int
+incNM :: Int -> M.FreerMonad (StateMEff Int) Int
 incNM n | n > 0     = (+1) <$> get >>= put >> incNM (n - 1)
         | otherwise = get 
 
@@ -41,7 +42,7 @@ compileAConcurrently :: IO (A.AState Int Int Int)
 compileAConcurrently = interpAConcurrently A.handleState (incNA num)
 
 compileM :: State Int Int
-compileM = M.interp M.handleState (incNM num)
+compileM = M.interp handleState (incNM num)
 
 runA :: Int -> A.AState Int Int Int -> (Int, Int)
 runA n a = A.runState a 0 n 
