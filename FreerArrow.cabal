@@ -30,6 +30,7 @@ library
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
       Control.Arrow.Freer.FreerArrowFinal
+      Control.Arrow.Freer.FreerArrowSimple
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Sum2
       Control.Arrow.State.ArrowState
@@ -67,6 +68,7 @@ executable Comparison
       FreerArrow
     , async
     , base >=4.7 && <5
+    , criterion
     , mtl
     , profunctors
     , timeit

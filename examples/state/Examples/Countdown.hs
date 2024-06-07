@@ -1,3 +1,6 @@
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE FlexibleContexts #-}
+
 module Examples.Countdown where
 
 import qualified Control.Monad.State.MonadState       as S
@@ -28,7 +31,19 @@ countMF = do
   if n == 0 then return n
   else S.put (n - 1) >> countMF
 
--- This does not work because it's a piece of code with an infinite length!
+countME :: Elgot1 M.FreerMonad (StateEff1 Int) Int Int
+countME = Elgot1 (\_ -> do
+                      n <- S.get
+                      if n == 0 then return $ Left n
+                      else (S.put (n - 1) >> (return $ Right (n - 1)))) return
+
+countMFE :: Elgot1 F.FreerMonad (StateEff1 Int) Int Int
+countMFE = Elgot1 (\_ -> do
+                      n <- S.get
+                      if n == 0 then return $ Left n
+                      else (S.put (n - 1) >> (return $ Right (n - 1)))) return 
+  
+
 countA :: Elgot AC.FreerArrowChoice (StateEff Int) Int Int
 countA = Elgot go id
   where go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
@@ -43,3 +58,11 @@ compileM = M.interp handleState1 countM
 
 compileMF :: State Int Int
 compileMF = F.runFreer countMF handleState1 
+
+compileME :: State Int Int
+compileME = interp1 (M.interp handleState1) countME 0
+
+compileMFE :: State Int Int
+compileMFE = interp1 f countMFE 0
+  where f :: forall m a. MonadState Int m => F.FreerMonad (StateEff1 Int) a -> m a
+        f m = F.runFreer m handleState1

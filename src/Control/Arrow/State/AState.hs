@@ -26,6 +26,19 @@ instance Arrow (AState s) where
 instance ArrowChoice (AState s) where
   left = left'
 
+  (AState f) +++ (AState g) =
+    AState $ \x s ->
+               case x of
+                 Left  a -> let (a', s') = f a s in (Left  a', s') 
+                 Right b -> let (b', s') = g b s in (Right b', s')
+
+  (AState f) ||| (AState g) =
+    AState $ \x s ->
+               case x of
+                 Left  a -> let (a', s') = f a s in (a', s') 
+                 Right b -> let (a', s') = g b s in (a', s')
+    
+
 instance ArrowState s (AState s) where
   get = AState $ \_ s -> (s, s)
 
@@ -39,8 +52,7 @@ instance Strong (AState s) where
   first' (AState f) = AState $ \(a, c) s -> let (b, s') = f a s in ((b, c), s')
   
 instance Choice (AState s) where
-  left' (AState f) = AState $ \a s ->
-    case a of
-      Left  a -> let (x, s') = f a s in (Left x, s')
+  left' (AState f) = AState $ \x s ->
+    case x of
+      Left  a -> let (x', s') = f a s in (Left x', s')
       Right b -> (Right b, s)
-  

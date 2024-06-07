@@ -16,8 +16,7 @@ import           Control.Monad.State hiding (get, put)
 import           Control.Monad.State.StateEff
 import           Control.Monad.Freer.Sum1()
 import           Data.Profunctor
-import           System.TimeIt
-import           System.IO
+import           Criterion.Main
 
 import qualified Examples.Countdown as Count
 
@@ -69,7 +68,7 @@ runA n a = runAState a 0 n
   
 runM :: Int -> State Int Int -> (Int, Int)
 runM n m = runState m n
-
+{--
 testInc :: IO ()
 testInc = do
   putStrLn "A:"
@@ -109,37 +108,21 @@ testInc = do
   let r = runM 1 m
   timeIt $ r `seq` pure r
   putStrLn $ "Result: " <> show r
+--}
 
 testCountDown :: IO ()
-testCountDown = do
-  putStrLn "A:"
-  let a = Count.compileA
-  let s = runAState a num 0
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  let s = runAState a (num * 2) 0
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  hFlush stdout
-  putStrLn "M:"
-  let a = Count.compileM
-  let s = runState a num
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  let s = runState a (num * 2)
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  hFlush stdout
-  putStrLn "M(F):"
-  let a = Count.compileMF
-  let s = runState a num
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  let s = runState a (num * 2)
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  hFlush stdout
-
+testCountDown = defaultMain [
+  bgroup "countdown" [ bench "A 1000"    $ nf (runAState Count.compileA 0) 1000
+                     , bench "A 10000"   $ nf (runAState Count.compileA 0) 10000
+                     , bench "A 100000"  $ nf (runAState Count.compileA 0) 100000
+                     , bench "M 1000"    $ nf (runState Count.compileM) 1000
+                     , bench "M 10000"   $ nf (runState Count.compileM) 10000
+                     , bench "M 100000"  $ nf (runState Count.compileM) 100000
+                     , bench "F 1000"    $ nf (runState Count.compileMF) 1000
+                     , bench "F 10000"   $ nf (runState Count.compileMF) 10000
+                     , bench "F 100000"  $ nf (runState Count.compileMF) 100000
+                     ]
+  ]
 
 main :: IO ()
 main = testCountDown
