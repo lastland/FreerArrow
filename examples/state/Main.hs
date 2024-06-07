@@ -117,7 +117,7 @@ testCountDown = do
   let s = runAState a num 0
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
-  let s = runAState a 0 num
+  let s = runAState a (num * 2) 0
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
@@ -126,7 +126,7 @@ testCountDown = do
   let s = runState a num
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
-  let s = runState a num
+  let s = runState a (num * 2)
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
@@ -135,7 +135,7 @@ testCountDown = do
   let s = runState a num
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
-  let s = runState a num
+  let s = runState a (num * 2)
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
