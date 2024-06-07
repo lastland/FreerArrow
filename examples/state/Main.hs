@@ -22,7 +22,7 @@ import           System.IO
 import qualified Examples.Countdown as Count
 
 num :: Int
-num = 10000000
+num = 100000000
 
 incNA :: Int -> FreerArrow (StateEff Int) Int Int
 incNA n | n > 0     = get >>> lmap (+1) put >>> incNA (n - 1)
@@ -112,7 +112,6 @@ testInc = do
 
 testCountDown :: IO ()
 testCountDown = do
-  {--
   putStrLn "A:"
   let a = Count.compileA
   let s = runAState a num 0
@@ -122,7 +121,6 @@ testCountDown = do
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
-  --}
   putStrLn "M:"
   let a = Count.compileM
   let s = runState a num

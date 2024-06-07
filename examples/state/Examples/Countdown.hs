@@ -1,14 +1,15 @@
 module Examples.Countdown where
 
-import qualified Control.Monad.State.MonadState      as S
-import qualified Control.Monad.Freer.FreerMonad      as M
-import qualified Control.Monad.Freer.FreerMonadFinal as F
-import qualified Control.Arrow.Freer.FreerArrowFinal as AF
+import qualified Control.Monad.State.MonadState       as S
+import qualified Control.Monad.Freer.FreerMonad       as M
+import qualified Control.Monad.Freer.FreerMonadFinal  as F
+import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
+import qualified Control.Arrow.Freer.FreerArrowChoice as AC
+import           Control.Arrow.Freer.Elgot
 import           Control.Category
 import           Control.Arrow
 import           Control.Arrow.State.ArrowState
 import           Control.Arrow.State.AState
-import           Control.Arrow.Freer.FreerArrowChoice
 import           Control.Monad.State hiding (get, put)
 import           Control.Monad.State.StateEff
 import           Control.Monad.Freer.Sum1()
@@ -28,13 +29,14 @@ countMF = do
   else S.put (n - 1) >> countMF
 
 -- This does not work because it's a piece of code with an infinite length!
-countA :: FreerArrowChoice (StateEff Int) Int Int
-countA = go
-  where go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
-             (id ||| (lmap (\x -> x - 1) put >>> countA))
+countA :: Elgot AC.FreerArrowChoice (StateEff Int) Int Int
+countA = Elgot go id
+  where go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
+        go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+             (id +++ lmap (\x -> x - 1) put)
 
 compileA :: AState Int Int Int
-compileA = interp handleState countA
+compileA = interp (AC.interp handleState) countA
 
 compileM :: State Int Int
 compileM = M.interp handleState1 countM
