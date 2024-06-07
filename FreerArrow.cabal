@@ -27,6 +27,7 @@ library
   exposed-modules:
       Control.Arrow.Exception.ArrowException
       Control.Arrow.Freer.Elgot
+      Control.Arrow.Freer.ElgotFinal
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
       Control.Arrow.Freer.FreerArrowFinal

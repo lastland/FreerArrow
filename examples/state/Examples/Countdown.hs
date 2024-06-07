@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE BangPatterns #-}
 
 module Examples.Countdown where
 
@@ -9,6 +10,7 @@ import qualified Control.Monad.Freer.FreerMonadFinal  as F
 import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
 import qualified Control.Arrow.Freer.FreerArrowChoice as AC
 import           Control.Arrow.Freer.Elgot
+import qualified Control.Arrow.Freer.ElgotFinal       as EF
 import           Control.Category
 import           Control.Arrow
 import           Control.Arrow.State.ArrowState
@@ -45,13 +47,24 @@ countMFE = Elgot1 (\_ -> do
   
 
 countA :: Elgot AC.FreerArrowChoice (StateEff Int) Int Int
-countA = Elgot go id
-  where go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
-        go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
-             (id +++ lmap (\x -> x - 1) put)
+countA =
+  let go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
+      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+            (right $ lmap (\x -> x - 1) put) in
+    Elgot go id
+
+countAEF :: EF.Elgot AC.FreerArrowChoice (StateEff Int) Int Int
+countAEF =
+  let go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
+      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+            (right $ lmap (\x -> x - 1) put) in
+    EF.elgot go id
 
 compileA :: AState Int Int Int
 compileA = interp (AC.interp handleState) countA
+
+compileAEF :: AState Int Int Int
+compileAEF = EF.runElgot countAEF (AC.interp handleState)
 
 compileM :: State Int Int
 compileM = M.interp handleState1 countM

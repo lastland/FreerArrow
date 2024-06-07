@@ -1,6 +1,7 @@
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE BangPatterns   #-}
 
 module Control.Arrow.Freer.Elgot where
 
@@ -16,10 +17,11 @@ data Elgot f (e :: Type -> Type -> Type) x y where
 
 interp :: ArrowChoice arr =>
   (forall a b. f e a b -> arr a b) -> Elgot f e x y -> arr x y
-interp h (Elgot l k) = go
-  where go = l' >>> k' ||| go
-        l' = h l
-        k' = h k
+interp h (Elgot l k) =
+  let !l' = h l in
+  let !k' = h k in
+  let go = l' >>> k' ||| go in
+    go
 
 data Elgot1 f (e :: Type -> Type) x r where
   Elgot1 :: (x -> f e (Either z x)) -> (z -> f e r) -> Elgot1 f e x r  

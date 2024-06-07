@@ -7,6 +7,7 @@ import qualified Control.Monad.State.MonadState      as S
 import qualified Control.Monad.Freer.FreerMonad      as M
 import qualified Control.Monad.Freer.FreerMonadFinal as F
 import qualified Control.Arrow.Freer.FreerArrowFinal as AF
+import qualified Control.Arrow.Freer.FreerArrowSimple as AS
 import           Control.Arrow
 import           Control.Arrow.State.ArrowState
 import           Control.Arrow.State.AState
@@ -21,7 +22,7 @@ import           Criterion.Main
 import qualified Examples.Countdown as Count
 
 num :: Int
-num = 100000000
+num = 10000
 
 incNA :: Int -> FreerArrow (StateEff Int) Int Int
 incNA n | n > 0     = get >>> lmap (+1) put >>> incNA (n - 1)
@@ -29,6 +30,10 @@ incNA n | n > 0     = get >>> lmap (+1) put >>> incNA (n - 1)
 
 incNAF :: Int -> AF.FreerArrow (StateEff Int) Int Int
 incNAF n | n > 0     = get >>> lmap (+1) put >>> incNAF (n - 1)
+         | otherwise = get
+
+incNAS :: Int -> AS.FreerArrow (StateEff Int) Int Int
+incNAS n | n > 0     = get >>> lmap (+1) put >>> incNAS (n - 1)
          | otherwise = get
 
 incNM :: Int -> M.FreerMonad (StateEff1 Int) Int
@@ -44,6 +49,9 @@ compileA = interp handleState (incNA num)
 
 compileAF :: AState Int Int Int
 compileAF = AF.runFreer (incNAF num) handleState
+
+compileAS :: AState Int Int Int
+compileAS = AS.interp handleState (incNAS num)
 
 interpAConcurrently :: (Profunctor arr, Arrow arr) =>
                        (forall a b. e a b -> arr a b) ->
@@ -64,10 +72,59 @@ compileF :: State Int Int
 compileF = F.runFreer (incNF num) handleState1 
 
 runA :: Int -> AState Int Int Int -> (Int, Int)
-runA n a = runAState a 0 n 
+runA n a = runAState a 0 n
+
+runA5 :: AState Int Int Int -> (Int, Int)
+runA5 a = runAState a 0 0 `seq`
+          runAState a 0 5 `seq`
+          runAState a 0 10 `seq`
+          runAState a 0 1000 `seq`
+          runAState a 0 500
   
 runM :: Int -> State Int Int -> (Int, Int)
 runM n m = runState m n
+
+runM5 :: State Int Int -> (Int, Int)
+runM5 m = runState m 0 `seq`
+          runState m 5 `seq`
+          runState m 10 `seq`
+          runState m 1000`seq`
+          runState m 500
+
+main :: IO ()
+main = defaultMain [
+  bgroup "inc"       [ bench "A from 0"   $ nf (runA 0) compileA
+                     , bench "A from 1"   $ nf (runA 1) compileA
+                     , bench "AS from 0"  $ nf (runA 0) compileAS
+                     , bench "AS from 1"  $ nf (runA 1) compileAS
+                     , bench "AF from 0"  $ nf (runA 0) compileAF
+                     , bench "AF from 1"  $ nf (runA 1) compileAF
+                     , bench "M from 0"   $ nf (runM 0) compileM
+                     , bench "M from 1"   $ nf (runM 0) compileM
+                     , bench "MF from 0"  $ nf (runM 0) compileF
+                     , bench "MF from 1"  $ nf (runM 0) compileF
+                     ],
+  bgroup "inc5"      [ bench "A"   $ nf runA5 compileA
+                     , bench "AS"  $ nf runA5 compileAS
+                     , bench "AF"  $ nf runA5 compileAF
+                     , bench "M"   $ nf runM5 compileM
+                     , bench "MF"  $ nf runM5 compileF
+                     ],
+  bgroup "countdown" [ bench "A 1000"     $ nf (runAState Count.compileA 0) 1000
+                     , bench "A 10000"    $ nf (runAState Count.compileA 0) 10000
+                     , bench "A 100000"   $ nf (runAState Count.compileA 0) 100000
+                     , bench "AEF 1000"   $ nf (runAState Count.compileAEF 0) 1000
+                     , bench "AEF 10000"  $ nf (runAState Count.compileAEF 0) 10000
+                     , bench "AEF 100000" $ nf (runAState Count.compileAEF 0) 100000
+                     , bench "M 1000"     $ nf (runState Count.compileM) 1000
+                     , bench "M 10000"    $ nf (runState Count.compileM) 10000
+                     , bench "M 100000"   $ nf (runState Count.compileM) 100000
+                     , bench "F 1000"     $ nf (runState Count.compileMF) 1000
+                     , bench "F 10000"    $ nf (runState Count.compileMF) 10000
+                     , bench "F 100000"   $ nf (runState Count.compileMF) 100000
+                     ]
+  ]
+
 {--
 testInc :: IO ()
 testInc = do
@@ -109,20 +166,3 @@ testInc = do
   timeIt $ r `seq` pure r
   putStrLn $ "Result: " <> show r
 --}
-
-testCountDown :: IO ()
-testCountDown = defaultMain [
-  bgroup "countdown" [ bench "A 1000"    $ nf (runAState Count.compileA 0) 1000
-                     , bench "A 10000"   $ nf (runAState Count.compileA 0) 10000
-                     , bench "A 100000"  $ nf (runAState Count.compileA 0) 100000
-                     , bench "M 1000"    $ nf (runState Count.compileM) 1000
-                     , bench "M 10000"   $ nf (runState Count.compileM) 10000
-                     , bench "M 100000"  $ nf (runState Count.compileM) 100000
-                     , bench "F 1000"    $ nf (runState Count.compileMF) 1000
-                     , bench "F 10000"   $ nf (runState Count.compileMF) 10000
-                     , bench "F 100000"  $ nf (runState Count.compileMF) 100000
-                     ]
-  ]
-
-main :: IO ()
-main = testCountDown
