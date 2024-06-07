@@ -19,8 +19,10 @@ import           Data.Profunctor
 import           System.TimeIt
 import           System.IO
 
+import qualified Examples.Countdown as Count
+
 num :: Int
-num = 40000000
+num = 10000000
 
 incNA :: Int -> FreerArrow (StateEff Int) Int Int
 incNA n | n > 0     = get >>> lmap (+1) put >>> incNA (n - 1)
@@ -68,11 +70,10 @@ runA n a = runAState a 0 n
 runM :: Int -> State Int Int -> (Int, Int)
 runM n m = runState m n
 
-main :: IO ()
-main = do
+testInc :: IO ()
+testInc = do
   putStrLn "A:"
   let a = compileA
-  timeIt $ a `seq` pure ()
   let s = runA 0 a
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
@@ -90,17 +91,6 @@ main = do
   timeIt $ s `seq` pure s
   putStrLn $ "Result: " <> show s
   hFlush stdout
-  {--
-  putStrLn "A (with concurrency):"
-  a <- timeIt compileAConcurrently
-  let s = runA 0 a
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  let s = runA 1 a
-  timeIt $ s `seq` pure s
-  putStrLn $ "Result: " <> show s
-  hFlush stdout
-  --}
   putStrLn "M:"
   let m = compileM
   timeIt $ m `seq` pure ()
@@ -119,3 +109,39 @@ main = do
   let r = runM 1 m
   timeIt $ r `seq` pure r
   putStrLn $ "Result: " <> show r
+
+testCountDown :: IO ()
+testCountDown = do
+  {--
+  putStrLn "A:"
+  let a = Count.compileA
+  let s = runAState a num 0
+  timeIt $ s `seq` pure s
+  putStrLn $ "Result: " <> show s
+  let s = runAState a 0 num
+  timeIt $ s `seq` pure s
+  putStrLn $ "Result: " <> show s
+  hFlush stdout
+  --}
+  putStrLn "M:"
+  let a = Count.compileM
+  let s = runState a num
+  timeIt $ s `seq` pure s
+  putStrLn $ "Result: " <> show s
+  let s = runState a num
+  timeIt $ s `seq` pure s
+  putStrLn $ "Result: " <> show s
+  hFlush stdout
+  putStrLn "M(F):"
+  let a = Count.compileMF
+  let s = runState a num
+  timeIt $ s `seq` pure s
+  putStrLn $ "Result: " <> show s
+  let s = runState a num
+  timeIt $ s `seq` pure s
+  putStrLn $ "Result: " <> show s
+  hFlush stdout
+
+
+main :: IO ()
+main = testCountDown

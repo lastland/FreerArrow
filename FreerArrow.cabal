@@ -54,6 +54,7 @@ library
 executable Comparison
   main-is: Main.hs
   other-modules:
+      Examples.Countdown
       Examples.State
       Paths_FreerArrow
   autogen-modules:
