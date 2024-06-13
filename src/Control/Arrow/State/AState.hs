@@ -48,6 +48,9 @@ instance Profunctor (AState s) where
   dimap f g (AState h) = AState $ \a s ->
     let (b, s') = h (f a) s in (g b, s')
 
+  lmap f (AState h) = AState $ \a s ->
+    let (b, s') = h (f a) s in (b, s')
+    
 instance Strong (AState s) where
   first' (AState f) = AState $ \(a, c) s -> let (b, s') = f a s in ((b, c), s')
   

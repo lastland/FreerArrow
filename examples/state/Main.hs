@@ -3,11 +3,12 @@
 
 module Main where
 
-import qualified Control.Monad.State.MonadState      as S
-import qualified Control.Monad.Freer.FreerMonad      as M
-import qualified Control.Monad.Freer.FreerMonadFinal as F
-import qualified Control.Arrow.Freer.FreerArrowFinal as AF
+import qualified Control.Monad.State.MonadState       as S
+import qualified Control.Monad.Freer.FreerMonad       as M
+import qualified Control.Monad.Freer.FreerMonadFinal  as F
+import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
 import qualified Control.Arrow.Freer.FreerArrowSimple as AS
+import qualified Control.Arrow.Freer.FreerArrowOps    as AO
 import           Control.Arrow
 import           Control.Arrow.State.ArrowState
 import           Control.Arrow.State.AState
@@ -36,6 +37,10 @@ incNAS :: Int -> AS.FreerArrow (StateEff Int) Int Int
 incNAS n | n > 0     = get >>> lmap (+1) put >>> incNAS (n - 1)
          | otherwise = get
 
+incNAO :: Int -> AO.FreerArrowOps (StateEff Int) Int Int
+incNAO n | n > 0     = get >>> lmap (+1) put >>> incNAO (n - 1)
+         | otherwise = get
+
 incNM :: Int -> M.FreerMonad (StateEff1 Int) Int
 incNM n | n > 0     = ((+1) :: Int -> Int) <$> S.get >>= S.put >> incNM (n - 1)
         | otherwise = S.get 
@@ -52,6 +57,9 @@ compileAF = AF.runFreer (incNAF num) handleState
 
 compileAS :: AState Int Int Int
 compileAS = AS.interp handleState (incNAS num)
+
+compileAO :: AState Int Int Int
+compileAO = AO.interp handleState (incNAO num)
 
 interpAConcurrently :: (Profunctor arr, Arrow arr) =>
                        (forall a b. e a b -> arr a b) ->
@@ -99,6 +107,8 @@ main = defaultMain [
                      , bench "AS from 1"  $ nf (runA 1) compileAS
                      , bench "AF from 0"  $ nf (runA 0) compileAF
                      , bench "AF from 1"  $ nf (runA 1) compileAF
+                     , bench "AO from 0"  $ nf (runA 0) compileAO
+                     , bench "AO from 1"  $ nf (runA 1) compileAO
                      , bench "M from 0"   $ nf (runM 0) compileM
                      , bench "M from 1"   $ nf (runM 0) compileM
                      , bench "MF from 0"  $ nf (runM 0) compileF
@@ -107,15 +117,19 @@ main = defaultMain [
   bgroup "inc5"      [ bench "A"   $ nf runA5 compileA
                      , bench "AS"  $ nf runA5 compileAS
                      , bench "AF"  $ nf runA5 compileAF
+                     , bench "AO"  $ nf runA5 compileAO
                      , bench "M"   $ nf runM5 compileM
                      , bench "MF"  $ nf runM5 compileF
                      ],
   bgroup "countdown" [ bench "A 1000"     $ nf (runAState Count.compileA 0) 1000
                      , bench "A 10000"    $ nf (runAState Count.compileA 0) 10000
                      , bench "A 100000"   $ nf (runAState Count.compileA 0) 100000
-                     , bench "AEF 1000"   $ nf (runAState Count.compileAEF 0) 1000
-                     , bench "AEF 10000"  $ nf (runAState Count.compileAEF 0) 10000
-                     , bench "AEF 100000" $ nf (runAState Count.compileAEF 0) 100000
+                     , bench "AO 1000"    $ nf (runAState Count.compileAO 0) 1000
+                     , bench "AO 10000"   $ nf (runAState Count.compileAO 0) 10000
+                     , bench "AO 100000"  $ nf (runAState Count.compileAO 0) 100000
+                     , bench "AOC 1000"   $ nf (runAState Count.compileAO' 0) 1000
+                     , bench "AOC 10000"  $ nf (runAState Count.compileAO' 0) 10000
+                     , bench "AOC 100000" $ nf (runAState Count.compileAO' 0) 100000
                      , bench "M 1000"     $ nf (runState Count.compileM) 1000
                      , bench "M 10000"    $ nf (runState Count.compileM) 10000
                      , bench "M 100000"   $ nf (runState Count.compileM) 100000

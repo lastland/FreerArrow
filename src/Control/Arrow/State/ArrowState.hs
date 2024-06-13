@@ -12,6 +12,7 @@ import qualified Control.Monad.State as M
 import qualified Control.Arrow.Freer.FreerArrowChoice as C
 import qualified Control.Arrow.Freer.FreerArrowFinal as F
 import qualified Control.Arrow.Freer.FreerArrowSimple as S
+import qualified Control.Arrow.Freer.FreerArrowOps as O
 import qualified Control.Arrow.Freer.KleisliFreer as K
 
 import Control.Category
@@ -54,6 +55,10 @@ instance Inj2 (StateEff s) e => ArrowState s (F.FreerArrow e) where
 instance Inj2 (StateEff s) e => ArrowState s (S.FreerArrow e) where
   get = S.embed $ inj2 Get
   put = S.embed $ inj2 Put
+
+instance Inj2 (StateEff s) e => ArrowState s (O.FreerArrowOps e) where
+  get = O.embed $ inj2 Get
+  put = O.embed $ inj2 Put
 
 instance Inj2 (StateEff s) e => ArrowState s (FreerArrowChoice e) where
   get = C.embed $ inj2 Get

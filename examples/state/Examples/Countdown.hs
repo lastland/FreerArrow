@@ -9,6 +9,7 @@ import qualified Control.Monad.Freer.FreerMonad       as M
 import qualified Control.Monad.Freer.FreerMonadFinal  as F
 import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
 import qualified Control.Arrow.Freer.FreerArrowChoice as AC
+import qualified Control.Arrow.Freer.FreerArrowOps    as AO
 import           Control.Arrow.Freer.Elgot
 import qualified Control.Arrow.Freer.ElgotFinal       as EF
 import           Control.Category
@@ -53,6 +54,23 @@ countA =
             (right $ lmap (\x -> x - 1) put) in
     Elgot go id
 
+countAO :: Elgot AO.FreerArrowOps (StateEff Int) Int Int
+countAO =
+  let go :: AO.FreerArrowOps (StateEff Int) Int (Either Int Int)
+      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+            (id +++ lmap (\x -> x - 1) put) in
+    Elgot go id
+
+countAO' :: ElgotC (AState Int) Int Int
+countAO' =
+  let body :: AO.FreerArrowOps (StateEff Int) Int (Either Int Int)
+      body = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+             (id +++ lmap (\x -> x - 1) put) in
+  let go :: AState Int Int (Either Int Int)
+      !go = AO.interp handleState body in
+    ElgotC go id
+    
+
 countAEF :: EF.Elgot AC.FreerArrowChoice (StateEff Int) Int Int
 countAEF =
   let go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
@@ -62,6 +80,12 @@ countAEF =
 
 compileA :: AState Int Int Int
 compileA = interp (AC.interp handleState) countA
+
+compileAO :: AState Int Int Int
+compileAO = interp (AO.interp handleState) countAO
+
+compileAO' :: AState Int Int Int
+compileAO' = interpC countAO'
 
 compileAEF :: AState Int Int Int
 compileAEF = EF.runElgot countAEF (AC.interp handleState)
