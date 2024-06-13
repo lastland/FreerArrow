@@ -22,14 +22,10 @@ import Control.Arrow.Freer.FreerWeakArrow (FreerArrow)
 data FreerArrowOps :: (Type -> Type -> Type) -> Type -> Type -> Type where
   One :: FreerArrow e x y -> FreerArrowOps e x y
   Seq :: FreerArrowOps e x y -> FreerArrowOps e y z -> FreerArrowOps e x z
-  And :: (x -> (a, b)) ->
-         FreerArrowOps e a c -> FreerArrowOps e b d ->
-         ((c, d) -> y) ->
-         FreerArrowOps e x y
-  Or  :: (x -> Either a b) ->
-         FreerArrowOps e a c -> FreerArrowOps e b d ->
-         (Either c d -> y) ->
-         FreerArrowOps e x y
+  And :: FreerArrowOps e a c -> FreerArrowOps e b d ->
+         FreerArrowOps e (a, b) (c, d)
+  Or  :: FreerArrowOps e a c -> FreerArrowOps e b d ->
+         FreerArrowOps e (Either a b) (Either c d)
 {--- end FreerArrowOps --}
 
 embed :: e x y -> FreerArrowOps e x y
@@ -40,17 +36,17 @@ embed f = One $ W.embed f
 instance Profunctor (FreerArrowOps e) where
   dimap f g (One x) = One $ dimap f g x
   dimap f g (Seq x y) = Seq (lmap f x) (rmap g y)
-  dimap f g (And h x y i) = And (h . f) x y (g . i)
-  dimap f g (Or  h x y i) = Or  (h . f) x y (g . i)
+  dimap f g (And x y) = arr f >>> And x y >>> arr g
+  dimap f g (Or  x y) = arr f >>> Or  x y >>> arr g 
   -- dimap f g (Or  x y) = Or (dimap f g x) (dimap f g y)
     -- Alternatively:
     --   Comp (f' . f) id x (dimap g' g y)
 
   -- lmap can be implemented more efficiently without recursion
-  lmap f (One x) = One $ lmap f x
+  lmap f (One x)   = One $ lmap f x
   lmap f (Seq x y) = Seq (lmap f x) y
-  lmap f (And h x y i) = And (h . f) x y i
-  lmap f (Or  h x y i) = Or  (h . f) x y i
+  lmap f (And x y) = arr f >>> And x y
+  lmap f (Or  x y) = arr f >>> Or  x y
 
 instance Strong (FreerArrowOps e) where
   first' = first
@@ -72,14 +68,14 @@ instance Category (FreerArrowOps e) where
 instance Arrow (FreerArrowOps e) where
   arr f = One $ W.Hom f
 
-  x *** y = And id x y id
+  x *** y = And x y
 
-  x &&& y = And (\b -> (b, b)) x y id
+  x &&& y = arr (\b -> (b, b)) >>> And x y
 
 instance ArrowChoice (FreerArrowOps e) where
-  x +++ y = Or id x y id
+  x +++ y = Or x y
 
-  x ||| y = Or id x y g
+  x ||| y = Or x y >>> arr g
     where g (Left  a) = a
           g (Right a) = a
 
@@ -89,5 +85,5 @@ interp :: (Profunctor arr, ArrowChoice arr) =>
   (forall a b. e a b -> arr a b) -> FreerArrowOps e x y -> arr x y
 interp h (One x) = W.interp h x
 interp h (Seq x y) = interp h x >>> interp h y
-interp h (And f x y g) = dimap f g (interp h x *** interp h y) 
-interp h (Or  f x y g) = dimap f g (interp h x +++ interp h y)
+interp h (And x y) = interp h x *** interp h y 
+interp h (Or  x y) = interp h x +++ interp h y
