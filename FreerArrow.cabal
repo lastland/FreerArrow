@@ -38,6 +38,9 @@ library
       Control.Monad.Freer.Sum1
       Control.Monad.State.MonadState
       Control.Monad.State.StateEff
+      Control.Arrow.Freer.FreerProfunctor
+      Control.Arrow.Freer.FreerStrongProfunctor
+      Control.Arrow.Freer.FreerArrowApply
   other-modules:
       Paths_FreerArrow
   autogen-modules:
