@@ -1,5 +1,6 @@
 {-# LANGUAGE RankNTypes       #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE TemplateHaskell  #-}
 
 module Main where
 
@@ -19,6 +20,9 @@ import           Control.Monad.State.StateEff
 import           Control.Monad.Freer.Sum1()
 import           Data.Profunctor
 import           Criterion.Main
+import           Language.Haskell.TH
+import           Staged.StateEff
+
 
 import qualified Examples.Countdown as Count
 
@@ -28,7 +32,7 @@ num = 10000
 incNA :: Int -> FreerArrow (StateEff Int) Int Int
 incNA n | n > 0     = get >>> lmap (+1) put >>> incNA (n - 1)
         | otherwise = get
-
+        
 incNAF :: Int -> AF.FreerArrow (StateEff Int) Int Int
 incNAF n | n > 0     = get >>> lmap (+1) put >>> incNAF (n - 1)
          | otherwise = get

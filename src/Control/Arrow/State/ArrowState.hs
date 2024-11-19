@@ -74,5 +74,6 @@ data StateEff :: Type -> Type -> Type -> Type where
   Put :: StateEff s s s
 
 handleState :: ArrowState s a => StateEff s x y -> a x y
+{-# INLINE handleState #-}
 handleState Get = get
 handleState Put = put
