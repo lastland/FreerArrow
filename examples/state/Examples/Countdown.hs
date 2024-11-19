@@ -25,13 +25,13 @@ import           Prelude hiding (id, (.))
 countM :: M.FreerMonad (StateEff1 Int) Int 
 countM = do
   n <- S.get
-  if n == 0 then return n
+  if n <= 0 then return n
   else S.put (n - 1) >> countM
 
 countMF :: F.FreerMonad (StateEff1 Int) Int 
 countMF = do
   n <- S.get
-  if n == 0 then return n
+  if n <= 0 then return n
   else S.put (n - 1) >> countMF
 
 countME :: Elgot1 M.FreerMonad (StateEff1 Int) Int Int

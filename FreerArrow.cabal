@@ -35,7 +35,10 @@ library
       Control.Arrow.Freer.FreerArrowSimple
       Control.Arrow.Freer.FreerWeakArrow
       Control.Arrow.Freer.KleisliFreer
+      Control.Arrow.Freer.Staged.FreerArrowOps
+      Control.Arrow.Freer.Staged.FreerWeakArrow
       Control.Arrow.Freer.Sum2
+      Control.Arrow.Staged.Arrow
       Control.Arrow.State.ArrowState
       Control.Arrow.State.AState
       Control.Monad.Freer.FreerMonad
@@ -49,11 +52,12 @@ library
       Paths_FreerArrow
   hs-source-dirs:
       src
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -O2 -Wno-missing-export-lists
   build-depends:
       base >=4.7 && <5
     , mtl
     , profunctors
+    , template-haskell
   default-language: Haskell2010
 
 executable Comparison
@@ -61,12 +65,13 @@ executable Comparison
   other-modules:
       Examples.Countdown
       Examples.State
+      Staged.StateEff
       Paths_FreerArrow
   autogen-modules:
       Paths_FreerArrow
   hs-source-dirs:
       examples/state
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists -Wno-unused-do-bind -Wno-name-shadowing
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -O2 -Wno-missing-export-lists -Wno-unused-do-bind -Wno-name-shadowing
   build-depends:
       FreerArrow
     , async
@@ -74,6 +79,7 @@ executable Comparison
     , criterion
     , mtl
     , profunctors
+    , template-haskell
     , timeit
   default-language: Haskell2010
 
@@ -90,7 +96,7 @@ executable Imp
       Paths_FreerArrow
   hs-source-dirs:
       examples/imp
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -O2 -Wno-missing-export-lists
   build-depends:
       FreerArrow
     , base >=4.7 && <5
@@ -108,7 +114,7 @@ test-suite FreerArrow-test
       Paths_FreerArrow
   hs-source-dirs:
       test
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -threaded -rtsopts -with-rtsopts=-N
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -O2 -threaded -rtsopts -with-rtsopts=-N
   build-depends:
       FreerArrow
     , base >=4.7 && <5

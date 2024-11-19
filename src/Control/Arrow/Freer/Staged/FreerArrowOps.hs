@@ -3,16 +3,19 @@
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
 
-module Control.Arrow.Freer.FreerArrowOps where
+module Control.Arrow.Freer.Staged.FreerArrowOps where
 
-import qualified Control.Arrow.Freer.FreerWeakArrow as W
+import qualified Control.Arrow.Freer.Staged.FreerWeakArrow as W
 import Control.Category
 import Control.Arrow
+import Control.Arrow.Staged.Arrow
 import Data.Profunctor
 import Data.Kind
 import Prelude hiding (id, (.))
 
-import Control.Arrow.Freer.FreerWeakArrow (FreerArrow)
+import Language.Haskell.TH hiding (Type)
+
+import Control.Arrow.Freer.Staged.FreerWeakArrow (FreerArrow)
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
@@ -65,24 +68,18 @@ instance Category (FreerArrowOps e) where
   y . x         = Seq x y 
 {-- end Category_FreerArrow --}
 
-instance Arrow (FreerArrowOps e) where
-  arr f = One $ W.Hom f
+instance StagedArrow (FreerArrowOps e) where
+  arrS f = One $ W.Hom f
 
-  x *** y = And x y
+  andS = And
 
-  x &&& y = arr (\b -> (b, b)) >>> And x y
-
-instance ArrowChoice (FreerArrowOps e) where
-  x +++ y = Or x y
-
-  x ||| y = Or x y >>> arr g
-    where g (Left  a) = a
-          g (Right a) = a
+instance StagedArrowChoice (FreerArrowOps e) where
+  orS = Or
 
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, ArrowChoice arr) =>
-  (forall a b. e a b -> arr a b) -> FreerArrowOps e x y -> arr x y
+  (forall a b. e a b -> Code Q (arr a b)) -> FreerArrowOps e x y -> Code Q (arr x y)
 interp h (One x) = W.interp h x
 interp h (Seq x y) = interp h x >>> interp h y
 interp h (And x y) = interp h x *** interp h y 
