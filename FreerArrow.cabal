@@ -95,6 +95,23 @@ executable Imp
     , profunctors
   default-language: Haskell2010
 
+executable Apply
+  main-is: Main.hs
+  other-modules:
+      Paths_FreerArrow
+  autogen-modules:
+      Paths_FreerArrow
+  hs-source-dirs:
+      examples/apply
+  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
+  build-depends:
+      FreerArrow
+    , base >=4.7 && <5
+    , containers
+    , mtl
+    , profunctors
+  default-language: Haskell2010
+
 test-suite FreerArrow-test
   type: exitcode-stdio-1.0
   main-is: Spec.hs
