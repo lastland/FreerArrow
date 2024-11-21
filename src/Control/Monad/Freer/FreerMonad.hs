@@ -1,5 +1,6 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE RankNTypes            #-}
+{-# LANGUAGE TypeOperators         #-}
 
 module Control.Monad.Freer.FreerMonad where
 
@@ -24,7 +25,9 @@ instance Applicative (FreerMonad e) where
 instance Functor (FreerMonad e) where
   fmap = liftM
 
+type x ~> y = forall a. x a -> y a
+
 interp :: Monad m =>
-  (forall x. e x -> m x) -> FreerMonad e a -> m a
+  (e ~> m) -> FreerMonad e ~> m
 interp _       (Ret x)    = return x
 interp handler (Bind e k) = handler e >>= interp handler . k

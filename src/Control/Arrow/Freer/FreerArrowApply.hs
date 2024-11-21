@@ -38,6 +38,9 @@ data FreerArrowApply e x y where
 --    \                 >---- z ------ y
 --      c . . . . . . c
 
+embed :: e :-> FreerArrowApply e
+embed f = Comp (,()) fst f id
+
 instance Arrow (FreerArrowApply e) where
   arr = Hom
   first = first'
@@ -87,7 +90,7 @@ instance ArrowApply (FreerArrowApply e) where
   app = App (, ()) fst id id
 
 interp :: (Profunctor arr, ArrowApply arr) =>
-  (e :-> arr) -> FreerArrowApply e x y -> arr x y
+  (e :-> arr) -> FreerArrowApply e :-> arr
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y

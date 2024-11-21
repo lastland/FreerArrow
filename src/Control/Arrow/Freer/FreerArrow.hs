@@ -87,7 +87,7 @@ instance Category (FreerArrow e) where
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, Arrow arr) =>
-  (e :-> arr) -> FreerArrow e x y -> arr x y
+  (e :-> arr) -> FreerArrow e :-> arr
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y

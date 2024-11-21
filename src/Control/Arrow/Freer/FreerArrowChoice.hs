@@ -85,7 +85,7 @@ instance Category (FreerArrowChoice e) where
   f . (Comp f' g' x y) = Comp f' g' x (f . y)
 
 interp :: (Profunctor arr, ArrowChoice arr) =>
-  (e :-> arr) -> FreerArrowChoice e x y -> arr x y
+  (e :-> arr) -> FreerArrowChoice e :-> arr
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (left (first (handler x))) >>>
                                         interp handler y

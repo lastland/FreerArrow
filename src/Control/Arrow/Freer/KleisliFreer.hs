@@ -19,12 +19,9 @@ newtype KleisliFreer e a b = KleisliFreer (Kleisli (FreerMonad e) a b)
 embed :: (a -> e b) -> KleisliFreer e a b 
 embed f = KleisliFreer $ Kleisli $ \x -> Bind (f x) Ret
 
--- |- The type for effect handlers.
-type x ~> y = forall a. x a -> y a
-
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
-interp :: forall e m x y. Monad m => (e ~> m) -> KleisliFreer e x y -> Kleisli m x y
+interp :: forall e m x y. Monad m => (e ~> m) -> KleisliFreer e :-> Kleisli m
 interp handler (KleisliFreer (Kleisli f)) =
   Kleisli $ go f
   where go :: forall a b. (a -> FreerMonad e b) -> a -> m b
