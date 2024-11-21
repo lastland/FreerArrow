@@ -2,10 +2,11 @@
 {-# LANGUAGE InstanceSigs   #-}
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE TypeOperators  #-}
+{-# LANGUAGE TupleSections  #-}
 
 module Control.Arrow.Freer.FreerArrowApply where
 
-import qualified Data.Bifunctor as B (first, bimap)
+import qualified Data.Bifunctor as B (first)
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
@@ -18,11 +19,24 @@ data FreerArrowApply e x y where
           e a b ->
           FreerArrowApply e z y ->
           FreerArrowApply e x y
+
+--                  x
+--          f   a ----- b   g       y
+--      x ----<           >---- z ----- y
+--              c . . . c
+
+
   App :: (x -> (a, c)) ->
          ((b, c) -> z) ->
-         FreerArrowApply e x (FreerArrowApply e a b, a) ->
+         FreerArrowApply e a (FreerArrowApply e d b, d) ->
          FreerArrowApply e z y ->
          FreerArrowApply e x y
+
+--    f    c _____
+-- x --- a -<     |
+--   \        d ----- b   g       k
+--    \                 >---- z ------ y
+--      c . . . . . . c
 
 instance Arrow (FreerArrowApply e) where
   arr = Hom
@@ -36,7 +50,7 @@ instance Profunctor (FreerArrowApply e) where
   dimap f g (Hom h) = Hom (g . h . f)
   dimap f g (Comp f' g' x y) =
     Comp (f' . f) g' x (rmap g y)
-  dimap f g (App f' g' c k) = App (f' . f) g' (lmap f c) (rmap g k)
+  dimap f g (App f' g' c k) = App (f' . f) g' c (rmap g k)
 
 
 
@@ -60,16 +74,17 @@ instance Strong (FreerArrowApply e) where
   first' (App f g c k) =
     App (assoc1 f)
         (assoc2 g)
-        (lmap fst c) (first' k)
+        c (first' k)
 
 instance Category (FreerArrowApply e) where
   id = Hom id
   f . (Hom g) = lmap g f
   f . (Comp f' g' x y) = Comp f' g' x (f . y)
-  f . (App f' g' c k) = App f' g' c (f . k) -- App c (f . k)
+  f . (App f' g' c k) = App f' g' c (f . k)
 
 instance ArrowApply (FreerArrowApply e) where
-  app = App (\(_, x) -> (x, ())) fst id id
+  app :: FreerArrowApply e (FreerArrowApply e b c, b) c
+  app = App (, ()) fst id id
 
 type x ~> y = forall a b. x a b -> y a b
 
@@ -78,15 +93,8 @@ interp :: (Profunctor arr, ArrowApply arr) =>
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y
-interp handler (App f g c k) = (_ >>> app) >>>
-                               interp handler k
+interp handler (App f g c k) = (interp handler (lmap f (first (rmap (first (interp handler)) c))) >>>
+                                first app) >>>
+                               lmap g (interp handler k)
 
--- f :: x -> (a, c)
--- g :: (b, c) -> z
--- c :: FreerArrowApply e x (FreerArrowApply e a b, a)
--- k :: FreerArrowApply e z y
--- interp handler :: FreerArrowApply e x y -> arr x y
--- first :: p a b -> p (a, c) (b, c)
--- app :: ar (ar x y, x) y
--- 
 
