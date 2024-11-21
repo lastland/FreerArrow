@@ -41,7 +41,7 @@ data ReifiedArrow e x y where
     ReifiedArrow e a b -> ReifiedArrow e y z -> ReifiedArrow e x z
 --}
 
--- |- Embed an effect in freer arrows.                        
+-- |- Embed an effect in freer arrows.
 embed :: e x y -> FreerArrow e x y
 embed f = Comp (,()) fst f id
 
@@ -83,14 +83,11 @@ instance Category (FreerArrow e) where
   f . (Hom g) = lmap g f
   f . (Comp f' g' x y) = Comp f' g' x (f . y)
 {-- end Category_FreerArrow --}
-  
--- |- The type for effect handlers.
-type x ~> y = forall a b. x a b -> y a b
 
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, Arrow arr) =>
-  (e ~> arr) -> FreerArrow e x y -> arr x y
+  (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y

@@ -86,10 +86,8 @@ instance ArrowApply (FreerArrowApply e) where
   app :: FreerArrowApply e (FreerArrowApply e b c, b) c
   app = App (, ()) fst id id
 
-type x ~> y = forall a b. x a b -> y a b
-
 interp :: (Profunctor arr, ArrowApply arr) =>
-  (e ~> arr) -> FreerArrowApply e x y -> arr x y
+  (e :-> arr) -> FreerArrowApply e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
                                         interp handler y

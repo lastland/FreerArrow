@@ -27,7 +27,7 @@ type x ~> y = forall a. x a -> y a
 interp :: forall e m x y. Monad m => (e ~> m) -> KleisliFreer e x y -> Kleisli m x y
 interp handler (KleisliFreer (Kleisli f)) =
   Kleisli $ go f
-  where go :: forall a b. (a -> FreerMonad e b) -> a -> m b 
+  where go :: forall a b. (a -> FreerMonad e b) -> a -> m b
         go f x = case f x of
                    Ret r    -> return r
                    Bind e k -> handler e >>= go k
