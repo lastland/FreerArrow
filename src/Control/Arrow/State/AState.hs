@@ -1,5 +1,6 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE FlexibleInstances     #-}
+{-# LANGUAGE LambdaCase            #-}
 
 module Control.Arrow.State.AState where
 
@@ -22,6 +23,22 @@ instance Arrow (AState s) where
 
   first = first'
 
+instance ArrowChoice (AState s) where
+  left = left'
+
+  (AState f) +++ (AState g) =
+    AState $ \x s ->
+               case x of
+                 Left  a -> let (a', s') = f a s in (Left  a', s') 
+                 Right b -> let (b', s') = g b s in (Right b', s')
+
+  (AState f) ||| (AState g) =
+    AState $ \x s ->
+               case x of
+                 Left  a -> let (a', s') = f a s in (a', s') 
+                 Right b -> let (a', s') = g b s in (a', s')
+    
+
 instance ArrowState s (AState s) where
   get = AState $ \_ s -> (s, s)
 
@@ -31,6 +48,14 @@ instance Profunctor (AState s) where
   dimap f g (AState h) = AState $ \a s ->
     let (b, s') = h (f a) s in (g b, s')
 
+  lmap f (AState h) = AState $ \a s ->
+    let (b, s') = h (f a) s in (b, s')
+    
 instance Strong (AState s) where
   first' (AState f) = AState $ \(a, c) s -> let (b, s') = f a s in ((b, c), s')
   
+instance Choice (AState s) where
+  left' (AState f) = AState $ \x s ->
+    case x of
+      Left  a -> let (x', s') = f a s in (Left x', s')
+      Right b -> (Right b, s)

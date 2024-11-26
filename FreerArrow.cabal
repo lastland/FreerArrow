@@ -26,9 +26,14 @@ source-repository head
 library
   exposed-modules:
       Control.Arrow.Exception.ArrowException
+      Control.Arrow.Freer.Elgot
+      Control.Arrow.Freer.ElgotFinal
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowChoice
       Control.Arrow.Freer.FreerArrowFinal
+      Control.Arrow.Freer.FreerArrowOps
+      Control.Arrow.Freer.FreerArrowSimple
+      Control.Arrow.Freer.FreerWeakArrow
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Sum2
       Control.Arrow.State.ArrowState
@@ -54,6 +59,7 @@ library
 executable Comparison
   main-is: Main.hs
   other-modules:
+      Examples.Countdown
       Examples.State
       Paths_FreerArrow
   autogen-modules:
@@ -65,6 +71,7 @@ executable Comparison
       FreerArrow
     , async
     , base >=4.7 && <5
+    , criterion
     , mtl
     , profunctors
     , timeit

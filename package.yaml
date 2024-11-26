@@ -52,6 +52,7 @@ executables:
     - timeit
     - mtl
     - async
+    - criterion
     ghc-options:
     - -Wno-missing-export-lists
     - -Wno-unused-do-bind
