@@ -2,8 +2,11 @@ Require Import Coq.Classes.Equivalence.
 (* Assume functional extensionality for simplicity. *)
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.Morphisms.
+Require Import Coq.Logic.JMeq.
 
 From Hammer Require Import Tactics Hammer.
+
+Open Scope type_scope.
 
 Section ID.
   Context {X : Type}.
@@ -81,21 +84,63 @@ End Arrows.
 Definition join {X Y A B C} (f : X -> A * C) (g : B * C -> Y) (x : X) (b : B) : Y :=
   let '(_, c) := f x in g (b, c).
 
+Fixpoint CharacteristicType {E : Type -> Type -> Type} {X Y : Type}
+                              (e : FreerArrow E X Y) : Type :=
+  match e with
+  | Hom _ => Y
+  | @Comp _ _ _ A B C f e y => B -> CharacteristicType y
+  end.
+
+Fixpoint Characteristic {E : Type -> Type -> Type} {X Y : Type}  
+  (e : FreerArrow E X Y) : (X -> CharacteristicType e) :=
+  match e with
+  | Hom f => f
+  | Comp f e y => join f (Characteristic y)
+  end.
+
+(* 
+Inductive Characteristic {E : Type -> Type -> Type} {X Y : Type} : 
+  forall (e : FreerArrow E X Y), (X -> CharacteristicType e) -> Prop :=
+  | HomChar : forall f, Characteristic (Hom f) f
+  | CompChar : forall A B C
+                 (f : X -> A * C) (e : E A B)
+                 (y : FreerArrow E (B * C) Y) (g : B * C -> CharacteristicType y) h,
+      Characteristic y g ->
+      JMeq h (join f g) ->
+      Characteristic (Comp f e y) h.
+
+Lemma CharacteristicCompInv {E : Type -> Type -> Type} {X Y : Type} :
+  forall A B C (f : X -> A * C) (e : E A B) (y : FreerArrow E (B * C) Y) h,
+  Characteristic (Comp f e y) h ->
+  exists g, (JMeq h (join f g) /\ Characteristic y g).
+Proof.
+  intros A B C f e y h H. cbn in h.
+  induction H.
+  - admit.
+  - 
+
+Lemma CharacteristicUniq {E : Type -> Type -> Type} {X Y : Type} :
+  forall (e : FreerArrow E X Y) f g,
+    Characteristic e f ->
+    Characteristic e g ->
+    f = g.
+Proof.
+  intros e f g H. generalize dependent g.
+  induction H.
+  - inversion 1; subst.
+    sauto use: Eqdep.EqdepTheory.inj_pair2.
+  - intros i Hi. subst.
+Admitted.
+*)
+
 Reserved Notation "x ≈ y" (at level 42).
 
-Inductive ArrowEq {E X Y} : FreerArrow E X Y -> FreerArrow E X Y -> Prop :=
-| HomEq : forall (f g : X -> Y), (forall x, f x = g x) -> Hom f ≈ Hom g
-| CompHomEq : forall {A B C D} (f : X -> A * C) g (h : X -> A * D) i (e : E A B),
-    (forall x b, join f g x b = join h i x b) ->
-    Comp f e (Hom g) ≈ Comp h e (Hom i)
-(* I need something similar to [CompHomEq] but for [CompEq], but I do not know
-   what that looks like (well, I have an intuition but I can't figure out the
-   type...). *)
-| CompEq : forall {A B C P Q R}
-             (f : Q * R -> A * C) (g : X -> P * R) x
-             (h : Q * R -> A * C) (i : X -> P * R) y (e : E A B) (e' : E P Q),
-    Comp f e x ≈ Comp h e y ->
-    Comp g e' (Comp f e x) ≈ Comp i e' (Comp h e y)
+Variant ArrowEq {E X Y} (x y : FreerArrow E X Y) : Prop :=
+| ArrowEqChar : forall f g,
+  Characteristic x = f ->
+  Characteristic y = g ->
+  JMeq f g ->
+  x ≈ y
 where "x ≈ y" := (ArrowEq x y).
 
 Instance Equivalence__ArrowEq {E X Y} : Equivalence (@ArrowEq E X Y).
@@ -104,21 +149,9 @@ Proof.
   - intros x. induction x.
     + sauto lq: on.
     + destruct x; sauto lq: on.
-  - intros x y. induction 1; sauto lq: on.
-  - intros x y z. induction 1.
-    + sauto lq: on.
-    + inversion 1; subst.
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H5; subst.
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H6; subst.
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H7; subst.
-      sauto lq: on.
-    + inversion 1; subst. 
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H5; subst.
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H6; subst.
-      do 4 apply Eqdep.EqdepTheory.inj_pair2 in H10; subst.
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H11; subst.
-      do 2 apply Eqdep.EqdepTheory.inj_pair2 in H12; subst.
-      sauto lq: on drew: off.
+  - intros x y. inversion 1. sauto.
+  - intros x y z. do 2 inversion 1; subst.
+    econstructor; sauto.
 Qed.
 
 Lemma eqImpliesArrowEq : forall {E X Y} (x y : FreerArrow E X Y),
@@ -139,7 +172,7 @@ Section ArrowsLaws.
 
   Corollary comp_id_r' : forall (x : FreerArrow E X Y),
       comp x (arr id) ≈ x.
-  Proof. sauto use: comp_id_r, eqImpliesArrowEq unfold: arr. Qed.
+  Proof. sauto use: comp_id_r, eqImpliesArrowEq. Qed.
 
   Theorem arr_id : @arr E X X (fun x => x) = Hom (fun x => x).
   Proof. reflexivity. Qed.
@@ -171,12 +204,16 @@ Section ArrowsLaws.
       comp (@first _ _ _ A a) (arr fst) ≈ comp (@arr _ (X * A) _ fst) a.
   Proof.
     induction a; cbn.
-    - sauto lq: on.
-    - destruct a.
-      + cbn. apply CompHomEq. intros [x a] b.
-        sauto unfold: join, unassoc, fst.
-      + cbn in IHa. cbn.
-      (* Existential types do not match. *)
+    - assert ((fun x : X * A => fst (let '(x0, a) := x in (y x0, a))) = (fun x : X * A => y (fst x)))
+        by sauto lq: on use: functional_extensionality.
+      sauto lq: on.
+    - cbn in IHa. econstructor.
+      + cbn. reflexivity.
+      + cbn. reflexivity.
+      + inversion IHa; subst.
+        apply JMeq_eq_dep_id in H1.
+        (* What do I do now? *)
+        (* Existential types do not match. *)
   Abort.
 
     Theorem first_assoc :
@@ -184,12 +221,16 @@ Section ArrowsLaws.
       comp (@first _ _ _ A (@first _ _ _ B a)) (arr assoc) ≈ comp (arr assoc) (first a).
   Proof.
     induction a; cbn.
-    - sauto lq: on. 
-    - destruct a.
-      + cbn. apply CompHomEq. intros [x a] b.
-        sauto unfold: join, unassoc, fst.
-      + cbn in IHa. cbn.
-      (* Existential types do not match. *)
+    - assert ((fun x : X * B * A => assoc (let '(x0, a) := x in (let '(x1, a0) := x0 in (y x1, a0), a))) =
+                (fun x : X * B * A => let '(x0, a) := assoc x in (y x0, a)))
+        by sauto lq: on use: functional_extensionality.
+      sauto lq: on.
+    - cbn in IHa. econstructor.
+      + cbn. reflexivity.
+      + cbn. reflexivity.
+      + inversion IHa; subst.
+        (* What do I do now? *)
+        (* Existential types do not match. *)
   Abort.
 
 End ArrowsLaws.
