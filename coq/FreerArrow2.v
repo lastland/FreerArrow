@@ -88,6 +88,9 @@ Inductive ArrowEq {E X Y} : FreerArrow E X Y -> FreerArrow E X Y -> Prop :=
 | CompHomEq : forall {A B C D} (f : X -> A * C) g (h : X -> A * D) i (e : E A B),
     (forall x b, join f g x b = join h i x b) ->
     Comp f e (Hom g) ≈ Comp h e (Hom i)
+(* I need something similar to [CompHomEq] but for [CompEq], but I do not know
+   what that looks like (well, I have an intuition but I can't figure out the
+   type...). *)
 | CompEq : forall {A B C P Q R}
              (f : Q * R -> A * C) (g : X -> P * R) x
              (h : Q * R -> A * C) (i : X -> P * R) y (e : E A B) (e' : E P Q),
