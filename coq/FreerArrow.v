@@ -54,10 +54,9 @@ Section Arrows.
   (* This is (>>>) in Haskell. *)
   Fixpoint comp {X Y Z} (x : FreerArrow E X Y) (y : FreerArrow E Y Z) :
     FreerArrow E X Z :=
-    match x with
-    | Hom g => lmap g y
-    | Comp f g a (Hom h) => Comp f (fun x => h (g x)) a y
-    | Comp f g a b => Comp f g a (comp b y)                                 
+    match x, y with
+    | Hom g, y => lmap g y
+    | Comp f g a b, y => Comp f g a (comp b y)
     end.
 
   Definition dimap {X Y A B}
@@ -78,8 +77,7 @@ Section ArrowsLaws.
 
   Theorem comp_id_r : forall (x : FreerArrow E X Y),
       comp x (arr id) = x.
-  Proof. induction x.
-         - sauto. Qed.
+  Proof. induction x; sauto. Qed.
 
     Theorem arr_id : @arr E X X (fun x => x) = Hom (fun x => x).
   Proof. reflexivity. Qed.
@@ -114,11 +112,6 @@ Section ArrowsLaws.
     - f_equal. extensionality a. sauto.
     - unfold arr in *. unfold first in IHa. rewrite IHa.
       cbn.
-      assert (forall y b (a0 : A0), fst ((fun '(y, (b, a0)) => (z (y, b), a0)) (y, (b, a0))) = z (y, b)).
-      { intros y b a0. cbn. }
-        
-
-      
       (* Existential types do not match. *)
   Abort.
 
