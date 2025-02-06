@@ -106,42 +106,6 @@ Lemma sameE_sameCharTyp : forall {E X Y A B C D Q}
     CharacteristicType (Comp f e x) = CharacteristicType (Comp g e y).
 Proof. sfirstorder. Qed.
 
-
-(* 
-Inductive character {E : Type -> Type -> Type} {X Y : Type} : 
-  forall (e : FreerArrow E X Y), (X -> CharacteristicType e) -> Prop :=
-  | HomChar : forall f, character (Hom f) f
-  | CompChar : forall A B C
-                 (f : X -> A * C) (e : E A B)
-                 (y : FreerArrow E (B * C) Y) (g : B * C -> CharacteristicType y) h,
-      character y g ->
-      JMeq h (join f g) ->
-      character (Comp f e y) h.
-
-Lemma CharacteristicCompInv {E : Type -> Type -> Type} {X Y : Type} :
-  forall A B C (f : X -> A * C) (e : E A B) (y : FreerArrow E (B * C) Y) h,
-  character (Comp f e y) h ->
-  exists g, (JMeq h (join f g) /\ character y g).
-Proof.
-  intros A B C f e y h H. cbn in h.
-  induction H.
-  - admit.
-  - 
-
-Lemma CharacteristicUniq {E : Type -> Type -> Type} {X Y : Type} :
-  forall (e : FreerArrow E X Y) f g,
-    character e f ->
-    character e g ->
-    f = g.
-Proof.
-  intros e f g H. generalize dependent g.
-  induction H.
-  - inversion 1; subst.
-    sauto use: Eqdep.EqdepTheory.inj_pair2.
-  - intros i Hi. subst.
-Admitted.
-*)
-
 Reserved Notation "x ≈ y" (at level 42).
 
 Inductive ArrowSimilar {E X Y P} : FreerArrow E X Y -> FreerArrow E P Y -> Prop :=
@@ -150,6 +114,8 @@ Inductive ArrowSimilar {E X Y P} : FreerArrow E X Y -> FreerArrow E P Y -> Prop 
     ArrowSimilar x y ->
     ArrowSimilar (Comp f e x) (Comp g e y). 
 
+(** This is important because Rocq cannot automatically figure out that two
+    similar arrows actually have characteristic functions of the same type. *)
 Theorem ArrowSimilarCharTypEq {E X Y P} : forall (x : FreerArrow E X Y) (y : FreerArrow E P Y),
     ArrowSimilar x y ->
     CharacteristicType x = CharacteristicType y.
@@ -188,13 +154,18 @@ Qed.
 
 Variant ArrowEq {E X Y} : FreerArrow E X Y -> FreerArrow E X Y -> Prop :=
 | ArrowEqSimilar : forall x y (H : ArrowSimilar x y),
+    (** This is essentially [character x = character y]. I need this stated in
+    this awkward way to convince Rocq that [character x] and [character y] share
+    the same type, so I can use equality on them. *)
     (let H0 := ArrowSimilarCharTypEq x y H in
      let cx := eq_rect _ (fun T : Type => X -> T) (character x) _ H0 in
      cx = character y) ->
     x ≈ y
 where "x ≈ y" := (ArrowEq x y).
 
-
+(** The definition of [ArrowEq] is not exactly structural, because very often
+    there are different types. But when we do have the same type, we can use
+    this simpler way to establish [ArrowEq]. *)
 Theorem ArrowEqInd {E X Y A B C}
   (f g : X -> (A * C)) (e : E A B) (x y : FreerArrow E (B * C) Y) :
   x ≈ y -> f = g -> Comp f e x ≈ Comp g e y.
@@ -203,8 +174,11 @@ Proof.
   eapply ArrowEqSimilar.
   Unshelve. 2: { constructor. assumption. }
   cbn. rewrite <- H1.
-  remember (ArrowSimilarCharTypEq (Comp g e x) (Comp g e y) (CompSimilar A B C C x y g g e H0)) as HC1.
-  remember (ArrowSimilarCharTypEq x y H0) as HC2.
+  (** Some Rocq engineering stuff so that I can use [UIP_refl] on two
+      "different" terms. This is a common pattern that you will see being used
+      across this file. *)
+  remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as HC1.
+  remember (ArrowSimilarCharTypEq x y _) as HC2.
   cbn in HC1. unfold eq_rect.
   generalize (character x).
   generalize HC1. rewrite HC2. intros.
@@ -241,6 +215,10 @@ Proof.
     rewrite (UIP_refl _ _ Hxz0). reflexivity.
 Qed.
 
+(** I can prove most arrow laws using definitional equality, so I don't bother
+    with [ArrowEq] directly. Instead, I use this to show definitional equality
+    implies [ArrowEq]. The proof is very simple since [ArrowEq] is reflexive
+    (shown above). *)
 Lemma eqImpliesArrowEq {E X Y} (x y : FreerArrow E X Y) :
     x = y -> x ≈ y.
 Proof. intros ->; reflexivity. Qed.
@@ -294,17 +272,6 @@ Section ArrowsLaws.
         extensionality a. sauto.
     - f_equal. sauto lq: on.
   Qed.
-
-
-  (*
-  @ArrowSimilar E (B0 * C * A) Y (B0 * C * A)
-    (@comp E (B0 * C * A) (Y * A) Y (@first E (B0 * C) Y A a) (@arr E (Y * A) Y (@fst Y A)))
-    (@lmap E (B0 * C * A) (B0 * C) Y (@fst (B0 * C) A) a) ->
-  @ArrowSimilar E (B0 * (C * A)) Y (B0 * C)
-    (@comp E (B0 * (C * A)) (Y * A) Y
-       (@lmap E (B0 * (C * A)) (B0 * C * A) (Y * A) (@unassoc B0 C A) (@first' E (B0 * C) Y A a))
-       (@arr E (Y * A) Y (@fst Y A))) a
-       *)
   
   Theorem first_comp_arr :
     forall (a : FreerArrow E X Y),
