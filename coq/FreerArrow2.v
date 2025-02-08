@@ -81,42 +81,46 @@ Section Arrows.
 
 End Arrows.
 
-Definition join {X Y A B C} (f : X -> A * C) (g : B * C -> Y) (x : X) (b : B) : Y :=
-  let '(_, c) := f x in g (b, c).
+Definition join {X Y A B C}
+  (f : X -> A * C) (g : B * C -> Y) (x : X) : A * (B -> Y) :=
+  let '(a, c) := f x in (a, fun b => g (b, c)).
+
 
 Fixpoint CharacteristicType {E : Type -> Type -> Type} {X Y : Type}
                               (e : FreerArrow E X Y) : Type :=
   match e with
   | Hom _ => Y
-  | @Comp _ _ _ A B C f e y => B -> CharacteristicType y
+  | @Comp _ _ _ A B C f e y => A * (B -> CharacteristicType y)
   end.
 
 Fixpoint character {E : Type -> Type -> Type} {X Y : Type}  
-  (e : FreerArrow E X Y) : (X -> CharacteristicType e) :=
+  (e : FreerArrow E X Y) : X -> CharacteristicType e :=
   match e with
   | Hom f => f
-  | Comp f e y => join f (character y)
+  | Comp f _ y => join f (character y)
   end.
 
 Lemma sameE_sameCharTyp : forall {E X Y A B C D Q}
                      (f : X -> A * C) (g : Q -> A * D)
-                     (x : FreerArrow E (B * C) Y) (y : FreerArrow E (B * D) Y)
+                     (x : FreerArrow E (B * C) Y)
+                     (y : FreerArrow E (B * D) Y)
                      (e : E A B),
     CharacteristicType x = CharacteristicType y ->
     CharacteristicType (Comp f e x) = CharacteristicType (Comp g e y).
 Proof. sfirstorder. Qed.
 
-Reserved Notation "x ≈ y" (at level 42).
-
-Inductive ArrowSimilar {E X Y P} : FreerArrow E X Y -> FreerArrow E P Y -> Prop :=
+Inductive ArrowSimilar {E X Y P} :
+  FreerArrow E X Y -> FreerArrow E P Y -> Prop :=
 | HomSimilar : forall f g, ArrowSimilar (Hom f) (Hom g)
-| CompSimilar : forall A B C D x y (f : X -> A * C) (g : P -> A * D) (e : E A B),
+| CompSimilar : forall A B C D x y
+                  (f : X -> A * C) (g : P -> A * D) (e : E A B),
     ArrowSimilar x y ->
     ArrowSimilar (Comp f e x) (Comp g e y). 
 
 (** This is important because Rocq cannot automatically figure out that two
     similar arrows actually have characteristic functions of the same type. *)
-Theorem ArrowSimilarCharTypEq {E X Y P} : forall (x : FreerArrow E X Y) (y : FreerArrow E P Y),
+Theorem ArrowSimilarCharTypEq {E X Y P} :
+  forall (x : FreerArrow E X Y) (y : FreerArrow E P Y),
     ArrowSimilar x y ->
     CharacteristicType x = CharacteristicType y.
 Proof.
@@ -124,14 +128,17 @@ Proof.
   - sauto lq: on.
   - intros. inversion H; subst.
     inversion H; subst.
-    do 2 apply Eqdep.EqdepTheory.inj_pair2 in H6.
+    do 2 apply inj_pair2 in H6.
     sfirstorder.
 Qed.
 
 (** This is more general than the normal transitivity because it is
     heterogeneous. *)
 Lemma Trans__ArrowSimilar :
-  forall {E X Y Z R} (x : FreerArrow E X R) (y : FreerArrow E Y R) (z : FreerArrow E Z R),
+  forall {E X Y Z R}
+    (x : FreerArrow E X R)
+    (y : FreerArrow E Y R)
+    (z : FreerArrow E Z R),
   ArrowSimilar x y -> ArrowSimilar y z -> ArrowSimilar x z.
 Proof.
   intros E X Y Z R x y z H. generalize dependent Z.
@@ -144,13 +151,22 @@ Proof.
     sauto lq: on.
 Qed.    
 
-Instance Equivalence__ArrowSimilar {E X Y} : Equivalence (@ArrowSimilar E X Y X).
+Instance Equivalence__ArrowSimilar {E X Y} :
+  Equivalence (@ArrowSimilar E X Y X).
 Proof.
   constructor.
   - intros x. induction x; sauto lq: on.
   - intros x y. induction 1; subst; sauto lq: on.
   - intros x y z. apply Trans__ArrowSimilar.
 Qed.
+
+Reserved Notation "x ≈ y" (at level 42).
+
+(*
+ArrowSimilar x y ->
+character x = character y ->
+x ≈ y
+*)
 
 Variant ArrowEq {E X Y} : FreerArrow E X Y -> FreerArrow E X Y -> Prop :=
 | ArrowEqSimilar : forall x y (H : ArrowSimilar x y),
@@ -230,8 +246,19 @@ Lemma comp_lmap_Similar : forall E A B C Y (a : FreerArrow E (B * C) Y),
     ArrowSimilar (comp (lmap unassoc (first' a)) (@arr _ (Y * A) _ fst)) a.
 Proof.
   intros.
-  (* TODO: Prove this. Looks provable by induction, but I won't directly be able
-     to do that without some dealing with types.*)
+  revert H. generalize dependent A.
+  revert a. generalize dependent C. generalize dependent B.
+  fix Ha 3.
+  intros. destruct a; [constructor |].
+  cbn. constructor. apply Ha.
+  cbn in H. inversion H; subst.
+  do 2 apply inj_pair2 in H4.
+  do 2 apply inj_pair2 in H5.
+  do 2 apply inj_pair2 in H6.
+  do 2 apply inj_pair2 in H9.
+  do 2 apply inj_pair2 in H10.
+  do 2 apply inj_pair2 in H11.
+  subst.
 Admitted.
 
 Section ArrowsLaws.
@@ -272,7 +299,8 @@ Section ArrowsLaws.
         extensionality a. sauto.
     - f_equal. sauto lq: on.
   Qed.
-  
+
+  (* first a >>> arr fst = arr fst >>> a *)
   Theorem first_comp_arr :
     forall (a : FreerArrow E X Y),
       comp (@first _ _ _ A a) (arr fst) ≈ comp (@arr _ (X * A) _ fst) a.
