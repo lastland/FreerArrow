@@ -4,7 +4,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
-From Hammer Require Import Hammer Tactics.
+From Hammer Require Import Tactics.
 
 Open Scope type_scope.
 
@@ -259,8 +259,7 @@ Proof.
   intros. destruct a; [constructor |].
   cbn. constructor. 
   cbn in H. inversion H; subst. 
-  inj_pair2_all. 
-  subst. apply H1.
+  inj_pair2_all. sfirstorder.
 Qed.
 
 Lemma comp_lmap_character : forall {E A B C Y} (a : FreerArrow E (B * C) Y)
@@ -339,13 +338,8 @@ Section ArrowsLaws.
     @first _ _ _ A (comp a b) = comp (@first _ _ _ A a) (first b).
   Proof.
     induction a; intros; cbn.
-    - generalize dependent X.
-      generalize dependent A.
-      destruct b; cbn.
-      + intros. f_equal. extensionality a. sauto.
-      + intros. f_equal.
-        extensionality a. sauto.
-    - f_equal. sauto lq: on.
+    - destruct b; cbn; f_equal; sauto use: functional_extensionality.
+    - sauto lq: on.
   Qed.
 
   (* first a >>> arr fst = arr fst >>> a *)
@@ -380,7 +374,7 @@ Section ArrowsLaws.
       intros. extensionality x. sauto.
   Qed.
 
-    Theorem first_assoc :
+  Theorem first_assoc :
     forall (a : FreerArrow E X Y),
       comp (@first _ _ _ A (@first _ _ _ B a)) (arr assoc) ≈ comp (arr assoc) (first a).
   Proof.
