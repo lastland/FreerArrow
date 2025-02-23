@@ -8,6 +8,12 @@ From Hammer Require Import Tactics Hammer.
 
 Open Scope type_scope.
 
+Ltac inj_pair2_all :=
+  repeat (match goal with
+          | H: existT _ _ _ = existT _ _ _ |- _ =>
+              apply inj_pair2 in H
+          end; subst).
+
 Section ID.
   Context {X : Type}.
   
@@ -128,7 +134,7 @@ Proof.
   - sauto lq: on.
   - intros. inversion H; subst.
     inversion H; subst.
-    do 2 apply inj_pair2 in H6.
+    inj_pair2_all.
     sfirstorder.
 Qed.
 
@@ -145,9 +151,7 @@ Proof.
   induction H.
   - sauto lq: on.
   - intros. inversion H0; subst.
-    do 2 apply inj_pair2 in H5.
-    do 2 apply inj_pair2 in H6. 
-    do 2 apply inj_pair2 in H7.
+    inj_pair2_all.
     sauto lq: on.
 Qed.    
 
@@ -222,9 +226,9 @@ Proof.
   - intros x y z. do 2 (inversion 1; subst).
     econstructor; cbn in *.
     Unshelve. 2: { etransitivity; eassumption. }
-    remember (ArrowSimilarCharTypEq x y H0) as Hxy.
-    remember (ArrowSimilarCharTypEq y z H3) as Hyz.
-    remember (ArrowSimilarCharTypEq x z (transitivity H0 H3)) as Hxz.
+    remember (ArrowSimilarCharTypEq x y _) as Hxy.
+    remember (ArrowSimilarCharTypEq y z _) as Hyz.
+    remember (ArrowSimilarCharTypEq x z _) as Hxz.
     revert H1 H4. unfold eq_rect.
     generalize (character x) (character y). generalize Hxz.
     rewrite Hxy. rewrite Hyz. intros; subst.
@@ -241,26 +245,72 @@ Proof. intros ->; reflexivity. Qed.
 
 Hint Resolve eqImpliesArrowEq : arrows.
 
-Lemma comp_lmap_Similar : forall E A B C Y (a : FreerArrow E (B * C) Y),
+Lemma lmap_Similar : forall {E A B C} (a : FreerArrow E A B) (f : C -> A),
+    ArrowSimilar (lmap f a) a.
+Proof.
+  induction a; constructor. reflexivity.
+Qed.
+
+Lemma comp_lmap_Similar : forall {E A B C Y} (a : FreerArrow E (B * C) Y),
     ArrowSimilar (comp (@first _ _ _ A a) (arr fst)) (lmap (@fst (B * C) A) a) ->
     ArrowSimilar (comp (lmap unassoc (first' a)) (@arr _ (Y * A) _ fst)) a.
 Proof.
-  intros.
-  revert H. generalize dependent A.
-  revert a. generalize dependent C. generalize dependent B.
-  fix Ha 3.
+  (* No need for induction *)
   intros. destruct a; [constructor |].
-  cbn. constructor. apply Ha.
+  cbn. constructor. 
   cbn in H. inversion H; subst.
-  do 2 apply inj_pair2 in H4.
-  do 2 apply inj_pair2 in H5.
-  do 2 apply inj_pair2 in H6.
-  do 2 apply inj_pair2 in H9.
-  do 2 apply inj_pair2 in H10.
-  do 2 apply inj_pair2 in H11.
-  subst.
-Admitted.
+  inj_pair2_all.
+  subst. apply H1.
+Qed.
 
+Lemma comp_lmap_character : forall {E A B C Y} (a : FreerArrow E (B * C) Y)
+                              (Hsim: ArrowSimilar (comp (@first _ _ _ A a) (arr fst)) (lmap (@fst (B * C) A) a)),
+    let Hpre := ArrowSimilarCharTypEq _ _ Hsim in
+    let cpre := eq_rect _ (fun T => B * C * A -> T) (character (comp (@first _ _ _ A a) (arr fst))) _ Hpre in 
+    cpre = character (lmap (@fst (B * C) A) a) ->
+    let Hpost := ArrowSimilarCharTypEq _ _ (comp_lmap_Similar _ Hsim) in
+    let cpost := eq_rect _ (fun T => (B * (C * A)) -> T)
+                   (character (comp (lmap unassoc (first' a)) (@arr _ (Y * A) _ fst))) _ Hpost in 
+    cpost = (fun '(x, (y, _)) => character a (x, y)).
+Proof.
+  intros. destruct a.
+  - cbn in *. unfold cpost.
+    rewrite (UIP_refl _ _ Hpost). cbn.
+    intros. extensionality x. destruct x as [b [c a]]. reflexivity.
+  - cbn in *. revert H. unfold cpre, cpost, join.
+    inversion Hsim; inj_pair2_all.
+    pose proof (ArrowSimilarCharTypEq _ _ H0).
+    generalize Hpre Hpost.
+    generalize (character (comp (lmap (@unassoc B0 C0 A) (first' a)) (arr fst))).
+    rewrite H. intros. revert H1.
+    rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0). cbn.
+    intros.
+    extensionality x. destruct x as [? [? ?]]. cbn.
+    remember (fun x : B * C * A =>
+        let '(a0, c0) := let '(x0, a) := x in let (x', b) := p x0 in (x', (b, a)) in (a0, fun b : B0 => c (b, c0))) as func1.
+    remember ((fun x : B * C * A => let '(a0, c) := p (fst x) in (a0, fun b : B0 => character a (b, c)))) as func2.
+    assert (func1 (b, c0, a0) = func2 (b, c0, a0)) by (rewrite H1; reflexivity). subst.
+    unfold fst in H2. destruct (p (b, c0)). inversion H2; subst.
+    f_equal.
+Qed.
+
+Lemma lmap_fst_character : forall {E A B C} (a : FreerArrow E A B),
+    let H := ArrowSimilarCharTypEq (@lmap _ (A * C) A B fst a) a (lmap_Similar a fst) in
+    let ca := eq_rect _ (fun T => (A * C) -> T) (character (@lmap _ (A * C) A B fst a)) _ H in
+    ca = (fun '(x, _) => (character a) x).
+Proof.
+  (* Induction is probably not necessary here, but it's simple. *)
+  induction a; cbn; unfold eq_rect.
+  - remember (ArrowSimilarCharTypEq _ _ _) as Hs.
+    cbn in Hs. rewrite (UIP_refl _ _ Hs).
+    extensionality x. destruct x as [x c].
+    reflexivity.
+  - remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+    cbn in Hs. rewrite (UIP_refl _ _ Hs).
+    extensionality x. destruct x as [x c].
+    reflexivity.
+Qed.    
+  
 Section ArrowsLaws.
 
   Context {E :Type -> Type -> Type}.
@@ -318,21 +368,21 @@ Section ArrowsLaws.
     - cbn in IHa. inversion IHa; subst.
       econstructor. Unshelve.
       2: { constructor; apply comp_lmap_Similar; assumption. }
-      revert H0. unfold eq_rect.
-      remember (ArrowSimilarCharTypEq (comp _ _) _ _) as H1.
-      remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as H2.
-      cbn in *. generalize H2.
-      assert (H3 : CharacteristicType (comp (lmap (@unassoc B0 C A) (first' a)) (arr fst)) =
-                     CharacteristicType a).
-      { admit. } (* TODO: Make this a lemma. Looks provable. *)
-      generalize (character (comp (@first E (B0 * C) Y A a) (arr fst))).
-      generalize (@join (X * A) _ _ _ _ (fun '(x, a0) => let (x', b) := p x in (x', (b, a0)))
-                    (character (comp (lmap unassoc (first' a)) (arr fst)))).
-      rewrite H1. rewrite H3. intros.
-      rewrite (UIP_refl _ _ H0).
-      (* TODO: This seems provable to me, but I will need to do a bunch of
-         things to related [c] and [c0], possibly before generalizing them. *)
-  Admitted.
+      cbn. unfold join.
+      pose proof (comp_lmap_character a H) as Htarget.
+      cbn in *. revert H0 Htarget.
+      remember (ArrowSimilarCharTypEq _ _ H) as H1.
+      remember (ArrowSimilarCharTypEq _ _ (comp_lmap_Similar _ _)) as H2.
+      remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as H3.
+      unfold eq_rect. generalize H1 H2 H3.
+      generalize (character (comp (@first _ (B0 * C) Y A a) (arr fst))).
+      generalize (character (comp (lmap (@unassoc B0 C A) (first' a)) (arr fst))).
+      rewrite H1. cbn. rewrite H2. intros. revert Htarget. revert H6.
+      rewrite (UIP_refl _ _ H0). rewrite (UIP_refl _ _ H4). rewrite (UIP_refl _ _ H5).
+      intros. extensionality x. destruct x as [? ?].
+      cbn. destruct (p x). f_equal. extensionality b.
+      pose proof (Htarget H6). rewrite H7. reflexivity.
+  Qed.
 
     Theorem first_assoc :
     forall (a : FreerArrow E X Y),
