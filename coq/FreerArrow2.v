@@ -258,8 +258,8 @@ Proof.
   (* No need for induction *)
   intros. destruct a; [constructor |].
   cbn. constructor. 
-  cbn in H. inversion H; subst.
-  inj_pair2_all.
+  cbn in H. inversion H; subst. 
+  inj_pair2_all. 
   subst. apply H1.
 Qed.
 
@@ -285,13 +285,12 @@ Proof.
     rewrite H. intros. revert H1.
     rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0). cbn.
     intros.
-    extensionality x. destruct x as [? [? ?]]. cbn.
+    extensionality x. destruct x as [? [? ?]]. cbn. 
     remember (fun x : B * C * A =>
         let '(a0, c0) := let '(x0, a) := x in let (x', b) := p x0 in (x', (b, a)) in (a0, fun b : B0 => c (b, c0))) as func1.
     remember ((fun x : B * C * A => let '(a0, c) := p (fst x) in (a0, fun b : B0 => character a (b, c)))) as func2.
-    assert (func1 (b, c0, a0) = func2 (b, c0, a0)) by (rewrite H1; reflexivity). subst.
-    unfold fst in H2. destruct (p (b, c0)). inversion H2; subst.
-    f_equal.
+    assert (func1 (b, c0, a0) = func2 (b, c0, a0)) by (rewrite H1; reflexivity).
+    sfirstorder.
 Qed.
 
 Lemma lmap_fst_character : forall {E A B C} (a : FreerArrow E A B),
@@ -379,9 +378,7 @@ Section ArrowsLaws.
       generalize (character (comp (lmap (@unassoc B0 C A) (first' a)) (arr fst))).
       rewrite H1. cbn. rewrite H2. intros. revert Htarget. revert H6.
       rewrite (UIP_refl _ _ H0). rewrite (UIP_refl _ _ H4). rewrite (UIP_refl _ _ H5).
-      intros. extensionality x. destruct x as [? ?].
-      cbn. destruct (p x). f_equal. extensionality b.
-      pose proof (Htarget H6). rewrite H7. reflexivity.
+      intros. extensionality x. sauto.
   Qed.
 
     Theorem first_assoc :
@@ -398,7 +395,10 @@ Section ArrowsLaws.
       unfold eq_rect. rewrite H.
       generalize (fun x : X * B * A => let '(x0, a) := assoc x in (y x0, a)).
       generalize HA. rewrite H. intros. rewrite (UIP_refl _ _ HA0). reflexivity.
-    - (* TODO: Try this. *)
+    - cbn in IHa. inversion IHa; subst.
+      econstructor. Unshelve.
+      2: { constructor. admit. (* This won't be pleasant. *) }
+      (* TODO: finish this proof. *)
   Abort.
 
 End ArrowsLaws.
