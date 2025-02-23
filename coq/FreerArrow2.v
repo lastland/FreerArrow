@@ -449,8 +449,8 @@ Section ProfunctorLaws.
     intros. cbn. 
     destruct x; [sfirstorder |].
     cbn in IHx. cbn. do 2 f_equal.
-    pose proof (IHx (B * C) B0 (B * C) B' id id h i). 
-    inversion H. inj_pair2_all. assumption.
+    specialize (IHx _ _ _ _ id id h i). 
+    inversion IHx. inj_pair2_all. assumption.
   Qed.
 
 End ProfunctorLaws.
