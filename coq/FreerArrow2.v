@@ -4,7 +4,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
-From Hammer Require Import Hammer Tactics.
+From Hammer Require Import Tactics.
 
 Open Scope type_scope.
 
@@ -398,14 +398,13 @@ Section ArrowsLaws.
     - cbn in IHa. inversion IHa; subst.
       econstructor. Unshelve.
       2: { constructor. destruct a; cbn; [constructor |].
-           constructor. inversion H. inj_pair2_all. apply H2. }
+           constructor. inversion H. inj_pair2_all. assumption. }
       cbn. destruct a.
       + cbn. remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
         cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn.
-        extensionality x. destruct x as [[x b] a]. unfold join. cbn.
-        destruct (p x). cbn. reflexivity.
-      + cbn. revert H0.
-        cbn in *. inversion H. inj_pair2_all.
+        extensionality x. destruct x as [[x b] a]. 
+        unfold join. hauto.
+      + revert H0. cbn in *. inversion H. inj_pair2_all.
         pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
         remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
         remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _)) as Hpost.
@@ -433,8 +432,7 @@ Section ArrowsLaws.
         destruct (p x). f_equal. extensionality b0. cbn.
         assert (func1 (b0, c0, b, a0) = func2 (b0, c0, b, a0)).
         { rewrite Heqfunc1. reflexivity. }
-        rewrite H0 in H2. rewrite Heqfunc2 in H2. cbn in H2.
-        destruct (p0 (b0, c0)); cbn. sfirstorder.
+        rewrite H0 in H2. rewrite Heqfunc2 in H2. sfirstorder.
   Qed.
 End ArrowsLaws.
 
