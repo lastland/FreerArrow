@@ -4,7 +4,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
-From Hammer Require Import Tactics Hammer.
+From Hammer Require Import Hammer Tactics.
 
 Open Scope type_scope.
 
@@ -397,10 +397,45 @@ Section ArrowsLaws.
       generalize HA. rewrite H. intros. rewrite (UIP_refl _ _ HA0). reflexivity.
     - cbn in IHa. inversion IHa; subst.
       econstructor. Unshelve.
-      2: { constructor. admit. (* This won't be pleasant. *) }
-      (* TODO: finish this proof. *)
-  Abort.
-
+      2: { constructor. destruct a; cbn; [constructor |].
+           constructor. inversion H. inj_pair2_all. apply H2. }
+      cbn. destruct a.
+      + cbn. remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+        cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn.
+        extensionality x. destruct x as [[x b] a]. unfold join. cbn.
+        destruct (p x). cbn. reflexivity.
+      + cbn. revert H0.
+        cbn in *. inversion H. inj_pair2_all.
+        pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
+        remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
+        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _)) as Hpost.
+        cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
+        generalize (character (comp (lmap (@unassoc B1 (C0 * B) A)
+                                       (first' (lmap unassoc (first' a)))) (arr assoc))).
+        rewrite Ht. intros. revert H0.
+        rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
+        unfold join. cbn. intros.
+        remember (fun x : B0 * C * B * A =>
+                    let
+                      '(a0, c0) :=
+                      let
+                        '(x0, a) := x in let (x', b) := let '(x1, a0) := x0 in let (x', b) := p0 x1 in (x', (b, a0)) in (x', (b, a))
+                    in (a0, fun b : B1 => c (b, c0))) as func1.
+        remember (fun x : B0 * C * B * A =>
+                    let
+                      '(a0, c0) :=
+                      let
+                        '(x0, a) := x in
+                      let (x', b) := let '(x1, a0) := x0 in let (x', b) := p0 x1 in (x', (b, a0)) in (x', (b, a)) in
+                    (a0, fun b : B1 => c (b, c0))) as func2.
+        extensionality x.
+        destruct x as [[? ?] ?]. cbn.
+        destruct (p x). f_equal. extensionality b0. cbn.
+        assert (func1 (b0, c0, b, a0) = func2 (b0, c0, b, a0)).
+        { rewrite Heqfunc1. reflexivity. }
+        rewrite H0 in H2. rewrite Heqfunc2 in H2. cbn in H2.
+        destruct (p0 (b0, c0)); cbn. sfirstorder.
+  Qed.
 End ArrowsLaws.
 
 (** TODO: I'm not interested in the following much, but worth proving
