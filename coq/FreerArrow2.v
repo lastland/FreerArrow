@@ -4,7 +4,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
-From Hammer Require Import Tactics.
+From Hammer Require Import Hammer Tactics.
 
 Open Scope type_scope.
 
@@ -314,8 +314,7 @@ Section ArrowsLaws.
 
   Context {E :Type -> Type -> Type}.
   Context {X Y Z A B: Type}.
-  Parameters (f : X -> Y) (g : Y -> Z).
-
+  
   Theorem comp_id_r : forall (x : FreerArrow E X Y),
       comp x (arr id) = x.
   Proof. induction x; sauto. Qed.
@@ -327,11 +326,11 @@ Section ArrowsLaws.
   Theorem arr_id : @arr E X X (fun x => x) = Hom (fun x => x).
   Proof. reflexivity. Qed.
 
-  Theorem arr_comp : 
+  Theorem arr_comp (f : X -> Y) (g : Y -> Z): 
       @arr E _ _ (fun x => g (f x)) = comp (arr f) (arr g).
   Proof. reflexivity. Qed.
 
-  Theorem first_arr :
+  Theorem first_arr (f : X -> Y) :
     @first E _ _ A (arr f) = arr (fun '(x, y) => (f x, y)).
   Proof. reflexivity. Qed.
 
@@ -436,14 +435,10 @@ Section ArrowsLaws.
   Qed.
 End ArrowsLaws.
 
-(** TODO: I'm not interested in the following much, but worth proving
-    eventually. *)
-
-(*
 Section ProfunctorLaws.
 
   Context {E :Type -> Type -> Type}.
-  Context {X Y Z A B: Type}.
+  Context {X Y A B: Type}.
 
   (* Profunctor laws. *)
 
@@ -457,8 +452,12 @@ Section ProfunctorLaws.
   Proof.
     intros until x. revert A B A' B'.
     induction x; [sauto|].
-    intros. cbn. f_equal. 
-  Abort.
+    intros. cbn. 
+    destruct x; [sfirstorder |].
+    cbn in IHx. cbn. do 2 f_equal.
+    pose proof (IHx (B * C) B0 (B * C) B' id id h i). 
+    inversion H. inj_pair2_all. assumption.
+  Qed.
 
 End ProfunctorLaws.
 
@@ -474,19 +473,14 @@ Section ArrowsLaws.
 
   Context {E :Type -> Type -> Type}.
   Context {X Y Z A B: Type}.
-  Parameters (f : X -> Y) (g : Y -> Z).
-
+  
   (* lmap and dimap *)
 
   Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrow E X Y),
       lmap f x = dimap f id x.
   Proof.
     induction x; cbn; [reflexivity |].
-    f_equal. symmetry. apply dimap_id.
+    sauto use: @comp_id_r unfold: arr.
   Qed.
-    
-
-  (* Arrow laws. *)
 
 End ArrowsLaws.
-*)
