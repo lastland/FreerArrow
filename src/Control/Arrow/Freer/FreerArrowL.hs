@@ -1,6 +1,5 @@
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
@@ -46,7 +45,7 @@ embed :: e x y -> FreerArrowL e x y
 embed f = Comp (,()) f (lmap fst id)
 
 -- ((x, y), z), (x, (y, z)), and (x, y, z) are all different in Haskell, unlike
--- in Rocq Prover
+-- in Rocq Prover.
 assoc :: ((x, y), z) -> ((x, y), z)
 assoc ((x, y), z) = ((x, y), z)
 
@@ -70,8 +69,8 @@ instance Profunctor (FreerArrowL e) where
 instance Strong (FreerArrowL e) where
   first' (Hom f) = Hom $ B.first f
   first' (Comp f a b) =
-    Comp (\(x, a) ->
-             let (x', b) = f x in (x', (b, a)))
+    Comp (\(x, a') ->
+             let (x', b') = f x in (x', (b', a')))
          a (lmap unassoc (first' b))
 {-- end Strong_FreerArrowL --}
 
