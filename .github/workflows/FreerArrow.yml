@@ -28,14 +28,20 @@ jobs:
     runs-on: ubuntu-latest 
     needs: pre_check
     if: ${{ needs.pre_check.outputs.should_skip_has != 'true' }}
+    strategy:
+        matrix:
+            resolver-version:
+                - 'lts-21.25'
+                - 'lts-22.43'
+                - 'lts-23.10'
     steps:
       - uses: actions/checkout@v4
       - uses: haskell-actions/setup@v2
         with:
-          ghc-version: '9.6.6'
+          ghc-version: '9.8.4'
           enable-stack: true
           stack-version: 'latest'
-      - run: stack build
+      - run: stack --resolver ${{ matrix.resolver-version }} build
 
   build-theory:
     name: Proof Check Freer Arrow Theories
