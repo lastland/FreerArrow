@@ -6,7 +6,6 @@
 
 module Control.Arrow.Freer.FreerArrowL where
 
-import qualified Data.Bifunctor as B (first)
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
@@ -17,8 +16,8 @@ import Prelude hiding (id, (.))
 {-- begin FreerArrowL --}
 data FreerArrowL e x y where
   Hom :: (x -> y) -> FreerArrowL e x y
-  Comp :: (x -> (a, c)) -> e a b -> FreerArrowL e (b, c) y ->
-          FreerArrowL e x y
+  Comp :: (x -> (a, c)) -> e a b ->
+          FreerArrowL e (b, c) y -> FreerArrowL e x y
 {-- end FreerArrowL --}
 
 -- A function that counts the number of effects in a freer arrow. This
