@@ -5,64 +5,65 @@ Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
 From FreerArrows Require Import Common Tactics.
-From Hammer Require Import Tactics.
+From Hammer Require Import Hammer Tactics.
 
 Open Scope type_scope.
 
-Inductive FreerArrowL (E : Type -> Type -> Type) (X Y : Type) : Type :=
-| Hom : (X -> Y) -> FreerArrowL E X Y
-| Comp : forall {A B C : Type},
-    (X -> A * C) -> E A B -> FreerArrowL E (B * C) Y -> FreerArrowL E X Y.
+Inductive FreerArrowChoiceL (E : Type -> Type -> Type) (X Y : Type) : Type :=
+| Hom : (X -> Y) -> FreerArrowChoiceL E X Y
+| Comp : forall {A B C W : Type},
+    (X -> A * C + W) -> E A B -> FreerArrowChoiceL E (B * C + W) Y -> FreerArrowChoiceL E X Y.
 
 Arguments Hom {E} {X} {Y}.
-Arguments Comp {E} {X} {Y} {A} {B} {C}.
+Arguments Comp {E} {X} {Y} {A} {B} {C} {W}.
 
 Section Arrows.
 
   Context {E :Type -> Type -> Type}.
-  Context {X Y A B: Type}.
 
   Definition assoc {X Y Z} (p : (X * Y * Z)) : (X * (Y * Z)) :=
     match p with
     | (x, y, z) => (x, (y, z))
     end.
 
-  Definition unassoc {X Y Z} (p : (X * (Y * Z))) : (X * Y * Z) :=
+  Definition unassoc {X Y Z W} (p : (X * (Y * Z)) + W * Z) : ((X * Y + W) * Z) :=
     match p with
-    | (x, (y, z)) => (x, y, z)
+    | inl (x, (y, z)) => (inl (x, y), z)
+    | inr (w, a) => (inr w, a)                      
     end.
 
-  Definition lmap {A X Y} (f : A -> X) (x : FreerArrowL E X Y) : FreerArrowL E A Y :=
+  Definition lmap {A X Y} (f : A -> X) (x : FreerArrowChoiceL E X Y) : FreerArrowChoiceL E A Y :=
     match x with
     | Hom h => Hom (fun x => h (f x))
     | Comp f' x y => Comp (fun x => f' (f x)) x y
     end.
 
-  Fixpoint first' {X Y A} (x : FreerArrowL E X Y) : FreerArrowL E (X * A) (Y * A) :=
+  Fixpoint first' {X Y A} (x : FreerArrowChoiceL E X Y) : FreerArrowChoiceL E (X * A) (Y * A) :=
     match x with
     | Hom f => Hom (fun '(x, a) => (f x, a))
     | Comp f a b => Comp (fun '(x, a) =>
                              match f x with
-                             | (x', b) => (x', (b, a))
+                             | inl (x', b) => inl (x', (b, a))
+                             | inr w => inr (w, a)
                              end)
                           a
                           (lmap unassoc (first' b))
-  end.
+    end.
 
-  Definition arr {X Y} : (X -> Y) -> FreerArrowL E X Y := Hom.
+  Definition arr {X Y} : (X -> Y) -> FreerArrowChoiceL E X Y := Hom.
 
-  Definition first : FreerArrowL E X Y -> FreerArrowL E (X * A) (Y * A) := first'.
+  Definition first {X Y A} : FreerArrowChoiceL E X Y -> FreerArrowChoiceL E (X * A) (Y * A) := first'.
 
   (* This is (>>>) in Haskell. *)
-  Fixpoint comp {X Y Z} (x : FreerArrowL E X Y) (y : FreerArrowL E Y Z) :
-    FreerArrowL E X Z :=
+  Fixpoint comp {X Y Z} (x : FreerArrowChoiceL E X Y) (y : FreerArrowChoiceL E Y Z) :
+    FreerArrowChoiceL E X Z :=
     match x with
     | Hom g => lmap g y
     | Comp f a b => Comp f a (comp b y)                                 
     end.
 
   Definition dimap {X Y A B}
-    (f : A -> X) (g : Y -> B) (x : FreerArrowL E X Y) : FreerArrowL E A B :=
+    (f : A -> X) (g : Y -> B) (x : FreerArrowChoiceL E X Y) : FreerArrowChoiceL E A B :=
     match x with
     | Hom h => Hom (fun x => g (h (f x)))
     | Comp f' x y => Comp (fun x => f' (f x)) x
@@ -71,46 +72,51 @@ Section Arrows.
 
 End Arrows.
 
-Definition join {X Y A B C}
-  (f : X -> A * C) (g : B * C -> Y) (x : X) : A * (B -> Y) :=
-  let '(a, c) := f x in (a, fun b => g (b, c)).
+Definition join {X Y A B C W}
+  (f : X -> A * C + W) (g : B * C + W -> Y) (x : X) : A * (B -> Y) + Y :=
+  match f x with 
+  | inl (a, c) => inl (a, fun b => g (inl (b, c)))
+  | inr w => inr (g (inr w))
+  end.
 
 
 Fixpoint CharacteristicType {E : Type -> Type -> Type} {X Y : Type}
-                              (e : FreerArrowL E X Y) : Type :=
+                              (e : FreerArrowChoiceL E X Y) : Type :=
   match e with
   | Hom _ => Y
-  | @Comp _ _ _ A B C f e y => A * (B -> CharacteristicType y)
+  | @Comp _ _ _ A B C W f e y =>
+      let Z := CharacteristicType y in
+      A * (B -> Z) + Z
   end.
 
 Fixpoint character {E : Type -> Type -> Type} {X Y : Type}  
-  (e : FreerArrowL E X Y) : X -> CharacteristicType e :=
+  (e : FreerArrowChoiceL E X Y) : X -> CharacteristicType e :=
   match e with
   | Hom f => f
   | Comp f _ y => join f (character y)
   end.
 
-Lemma sameE_sameCharTyp : forall {E X Y A B C D Q}
-                     (f : X -> A * C) (g : Q -> A * D)
-                     (x : FreerArrowL E (B * C) Y)
-                     (y : FreerArrowL E (B * D) Y)
+Lemma sameE_sameCharTyp : forall {E X Y A B C D Q W U}
+                     (f : X -> A * C + W) (g : Q -> A * D + U)
+                     (x : FreerArrowChoiceL E (B * C + W) Y)
+                     (y : FreerArrowChoiceL E (B * D + U) Y)
                      (e : E A B),
     CharacteristicType x = CharacteristicType y ->
     CharacteristicType (Comp f e x) = CharacteristicType (Comp g e y).
 Proof. sfirstorder. Qed.
 
 Inductive ArrowSimilar {E X Y P} :
-  FreerArrowL E X Y -> FreerArrowL E P Y -> Prop :=
+  FreerArrowChoiceL E X Y -> FreerArrowChoiceL E P Y -> Prop :=
 | HomSimilar : forall f g, ArrowSimilar (Hom f) (Hom g)
-| CompSimilar : forall A B C D x y
-                  (f : X -> A * C) (g : P -> A * D) (e : E A B),
+| CompSimilar : forall A B C D W U x y
+                  (f : X -> A * C + W) (g : P -> A * D + U) (e : E A B),
     ArrowSimilar x y ->
     ArrowSimilar (Comp f e x) (Comp g e y). 
 
 (** This is important because Rocq cannot automatically figure out that two
     similar arrows actually have characteristic functions of the same type. *)
 Theorem ArrowSimilarCharTypEq {E X Y P} :
-  forall (x : FreerArrowL E X Y) (y : FreerArrowL E P Y),
+  forall (x : FreerArrowChoiceL E X Y) (y : FreerArrowChoiceL E P Y),
     ArrowSimilar x y ->
     CharacteristicType x = CharacteristicType y.
 Proof.
@@ -126,9 +132,9 @@ Qed.
     heterogeneous. *)
 Lemma Trans__ArrowSimilar :
   forall {E X Y Z R}
-    (x : FreerArrowL E X R)
-    (y : FreerArrowL E Y R)
-    (z : FreerArrowL E Z R),
+    (x : FreerArrowChoiceL E X R)
+    (y : FreerArrowChoiceL E Y R)
+    (z : FreerArrowChoiceL E Z R),
   ArrowSimilar x y -> ArrowSimilar y z -> ArrowSimilar x z.
 Proof.
   intros E X Y Z R x y z H. generalize dependent Z.
@@ -156,7 +162,7 @@ character x = character y ->
 x ≈ y
 *)
 
-Variant ArrowEq {E X Y} : FreerArrowL E X Y -> FreerArrowL E X Y -> Prop :=
+Variant ArrowEq {E X Y} : FreerArrowChoiceL E X Y -> FreerArrowChoiceL E X Y -> Prop :=
 | ArrowEqSimilar : forall x y (H : ArrowSimilar x y),
     (** This is essentially [character x = character y]. I need this stated in
     this awkward way to convince Rocq that [character x] and [character y] share
@@ -170,8 +176,8 @@ where "x ≈ y" := (ArrowEq x y).
 (** The definition of [ArrowEq] is not exactly structural, because very often
     there are different types. But when we do have the same type, we can use
     this simpler way to establish [ArrowEq]. *)
-Theorem ArrowEqInd {E X Y A B C}
-  (f g : X -> (A * C)) (e : E A B) (x y : FreerArrowL E (B * C) Y) :
+Theorem ArrowEqInd {E X Y A B C W}
+  (f g : X -> (A * C) + W) (e : E A B) (x y : FreerArrowChoiceL E ((B * C) + W) Y) :
   x ≈ y -> f = g -> Comp f e x ≈ Comp g e y.
 Proof.
   inversion 1. intros Hfunc; subst.
@@ -223,20 +229,20 @@ Qed.
     with [ArrowEq] directly. Instead, I use this to show definitional equality
     implies [ArrowEq]. The proof is very simple since [ArrowEq] is reflexive
     (shown above). *)
-Lemma eqImpliesArrowEq {E X Y} (x y : FreerArrowL E X Y) :
+Lemma eqImpliesArrowEq {E X Y} (x y : FreerArrowChoiceL E X Y) :
     x = y -> x ≈ y.
 Proof. intros ->; reflexivity. Qed.
 
 Hint Resolve eqImpliesArrowEq : arrows.
 
-Lemma lmap_Similar : forall {E A B C} (a : FreerArrowL E A B) (f : C -> A),
+Lemma lmap_Similar : forall {E A B C} (a : FreerArrowChoiceL E A B) (f : C -> A),
     ArrowSimilar (lmap f a) a.
 Proof.
   induction a; constructor. reflexivity.
 Qed.
 
-Lemma comp_lmap_Similar : forall {E A B C Y} (a : FreerArrowL E (B * C) Y),
-    ArrowSimilar (comp (@first _ _ _ A a) (arr fst)) (lmap (@fst (B * C) A) a) ->
+Lemma comp_lmap_Similar : forall {E A B C Y W} (a : FreerArrowChoiceL E ((B * C) + W) Y),
+    ArrowSimilar (comp (@first _ _ _ A a) (arr fst)) (lmap (@fst (B * C + W) A) a) ->
     ArrowSimilar (comp (lmap unassoc (first' a)) (@arr _ (Y * A) _ fst)) a.
 Proof.
   (* No need for induction *)
@@ -246,8 +252,11 @@ Proof.
   inj_pair2_all. sfirstorder.
 Qed.
 
-Lemma comp_lmap_character : forall {E A B C Y} (a : FreerArrowL E (B * C) Y)
-                              (Hsim: ArrowSimilar (comp (@first _ _ _ A a) (arr fst)) (lmap (@fst (B * C) A) a)),
+(*
+Lemma comp_lmap_character : forall {E A B C Y W}
+                              (a : FreerArrowChoiceL E ((B * C) + W) Y)
+                              (Hsim: ArrowSimilar (comp (@first _ _ _ A a) (arr fst))
+                                       (lmap (@fst (B * C + W) A) a)),
     let Hpre := ArrowSimilarCharTypEq _ _ Hsim in
     let cpre := eq_rect _ (fun T => B * C * A -> T) (character (comp (@first _ _ _ A a) (arr fst))) _ Hpre in 
     cpre = character (lmap (@fst (B * C) A) a) ->
@@ -275,8 +284,9 @@ Proof.
     assert (func1 (b, c0, a0) = func2 (b, c0, a0)) by (rewrite H1; reflexivity).
     sfirstorder.
 Qed.
+*)
 
-Lemma lmap_fst_character : forall {E A B C} (a : FreerArrowL E A B),
+Lemma lmap_fst_character : forall {E A B C} (a : FreerArrowChoiceL E A B),
     let H := ArrowSimilarCharTypEq (@lmap _ (A * C) A B fst a) a (lmap_Similar a fst) in
     let ca := eq_rect _ (fun T => (A * C) -> T) (character (@lmap _ (A * C) A B fst a)) _ H in
     ca = (fun '(x, _) => (character a) x).
@@ -298,11 +308,11 @@ Section ArrowsLaws.
   Context {E :Type -> Type -> Type}.
   Context {X Y Z A B: Type}.
   
-  Theorem comp_id_r : forall (x : FreerArrowL E X Y),
+  Theorem comp_id_r : forall (x : FreerArrowChoiceL E X Y),
       comp x (arr id) = x.
   Proof. induction x; sauto. Qed.
 
-  Corollary comp_id_r' : forall (x : FreerArrowL E X Y),
+  Corollary comp_id_r' : forall (x : FreerArrowChoiceL E X Y),
       comp x (arr id) ≈ x.
   Proof. sauto use: comp_id_r, eqImpliesArrowEq. Qed.
 
@@ -318,7 +328,7 @@ Section ArrowsLaws.
   Proof. reflexivity. Qed.
 
   Theorem first_comp :
-    forall (a : FreerArrowL E X Y) (b : FreerArrowL E Y Z),
+    forall (a : FreerArrowChoiceL E X Y) (b : FreerArrowChoiceL E Y Z),
     @first _ _ _ A (comp a b) = comp (@first _ _ _ A a) (first b).
   Proof.
     induction a; intros; cbn.
@@ -328,7 +338,7 @@ Section ArrowsLaws.
 
   (* first a >>> arr fst = arr fst >>> a *)
   Theorem first_comp_arr :
-    forall (a : FreerArrowL E X Y),
+    forall (a : FreerArrowChoiceL E X Y),
       comp (@first _ _ _ A a) (arr fst) ≈ comp (@arr _ (X * A) _ fst) a.
   Proof.
     induction a; cbn.
@@ -344,22 +354,47 @@ Section ArrowsLaws.
     - cbn in IHa. inversion IHa; subst.
       econstructor. Unshelve.
       2: { constructor; apply comp_lmap_Similar; assumption. }
-      cbn. unfold join.
-      pose proof (comp_lmap_character a H) as Htarget.
-      cbn in *. revert H0 Htarget.
-      remember (ArrowSimilarCharTypEq _ _ H) as H1.
-      remember (ArrowSimilarCharTypEq _ _ (comp_lmap_Similar _ _)) as H2.
-      remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as H3.
-      unfold eq_rect. generalize H1 H2 H3.
-      generalize (character (comp (@first _ (B0 * C) Y A a) (arr fst))).
-      generalize (character (comp (lmap (@unassoc B0 C A) (first' a)) (arr fst))).
-      rewrite H1. cbn. rewrite H2. intros. revert Htarget. revert H6.
-      rewrite (UIP_refl _ _ H0). rewrite (UIP_refl _ _ H4). rewrite (UIP_refl _ _ H5).
-      intros. extensionality x. sauto.
+      destruct a.
+      + cbn. unfold eq_rect.
+        remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+        cbn in Hs. rewrite (UIP_refl _ _ Hs).
+        extensionality x. destruct x as [? ?]. unfold join. sauto.
+      + revert H0. cbn in *. inversion H. inj_pair2_all.
+        pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht.
+        remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
+        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _ _ _)) as Hpost.
+        cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect.
+        generalize (character (comp (lmap (@unassoc B1 C0 A W0) (first' a)) (arr fst))).
+        rewrite Ht. intros; revert H0.
+        rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
+        unfold join. cbn. intros.
+        remember ((fun x : (B0 * C + W) * A =>
+                     match (let '(x0, a) := x in match s0 x0 with
+                                                 | inl (x', b) => inl (x', (b, a))
+                                                 | inr w => inr (w, a)
+                                                 end) with
+                     | inl (a0, c0) => inl (a0, fun b : B1 => c (inl (b, c0)))
+                     | inr w => inr (c (inr w))
+                     end)) as func1.
+        remember ((fun x : (B0 * C + W) * A =>
+                     match s0 (fst x) with
+                     | inl (a0, c) => inl (a0, fun b : B1 => character a (inl (b, c)))
+                     | inr w => inr (character a (inr w))
+                     end)) as func2.
+        extensionality x. destruct x as [? ?]. cbn.
+        destruct (s x) as [[? ?] | ?].
+        * do 2 f_equal. extensionality b.
+          assert (func1 (inl (b, c0), a0) = func2 (inl (b, c0), a0)).
+          { rewrite H0. reflexivity. }
+          rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
+        * f_equal.
+          assert (func1 (inr w, a0) = func2 (inr w, a0)).
+          { rewrite H0. reflexivity. }
+          rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
   Qed.
 
   Theorem first_assoc :
-    forall (a : FreerArrowL E X Y),
+    forall (a : FreerArrowChoiceL E X Y),
       comp (@first _ _ _ A (@first _ _ _ B a)) (arr assoc) ≈ comp (arr assoc) (first a).
   Proof.
     induction a; cbn.
@@ -384,32 +419,51 @@ Section ArrowsLaws.
       + revert H0. cbn in *. inversion H. inj_pair2_all.
         pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
         remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
-        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _)) as Hpost.
+        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _ _ _)) as Hpost.
         cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
-        generalize (character (comp (lmap (@unassoc B1 (C0 * B) A)
+        generalize (character (comp (lmap (@unassoc B1 (C0 * B) A (W0 * B))
                                        (first' (lmap unassoc (first' a)))) (arr assoc))).
         rewrite Ht. intros. revert H0.
         rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
         unfold join. cbn. intros.
-        remember (fun x : B0 * C * B * A =>
-                    let
-                      '(a0, c0) :=
-                      let
-                        '(x0, a) := x in let (x', b) := let '(x1, a0) := x0 in let (x', b) := p0 x1 in (x', (b, a0)) in (x', (b, a))
-                    in (a0, fun b : B1 => c (b, c0))) as func1.
-        remember (fun x : B0 * C * B * A =>
-                    let
-                      '(a0, c0) :=
-                      let
-                        '(x0, a) := x in
-                      let (x', b) := let '(x1, a0) := x0 in let (x', b) := p0 x1 in (x', (b, a0)) in (x', (b, a)) in
-                    (a0, fun b : B1 => c (b, c0))) as func2.
+        remember (fun x : (B0 * C + W) * B * A =>
+                    match
+                      (let
+                          '(x0, a) := x in
+                        match
+                          (let '(x1, a0) := x0 in match s0 x1 with
+                                                  | inl (x', b) => inl (x', (b, a0))
+                                                  | inr w => inr (w, a0)
+                                                  end)
+                        with
+                        | inl (x', b) => inl (x', (b, a))
+                        | inr w => inr (w, a)
+                        end)
+                    with
+                    | inl (a0, c0) => inl (a0, fun b : B1 => c (inl (b, c0)))
+                    | inr w => inr (c (inr w))
+                    end) as func1.
+        remember (fun x : (B0 * C + W) * B * A =>
+                    match
+                      (let '(x0, a) := assoc x in match s0 x0 with
+                                                  | inl (x', b) => inl (x', (b, a))
+                                                  | inr w => inr (w, a)
+                                                  end)
+                    with
+                    | inl (a0, c) => inl (a0, fun b : B1 => character (lmap unassoc (first' a)) (inl (b, c)))
+                    | inr w => inr (character (lmap unassoc (first' a)) (inr w))
+                    end) as func2.
         extensionality x.
         destruct x as [[? ?] ?]. cbn.
-        destruct (p x). f_equal. extensionality b0. cbn.
-        assert (func1 (b0, c0, b, a0) = func2 (b0, c0, b, a0)).
-        { rewrite Heqfunc1. reflexivity. }
-        rewrite H0 in H2. rewrite Heqfunc2 in H2. sfirstorder.
+        destruct (s x) as [[? ?] | ?].
+        * do 2 f_equal. extensionality b0. cbn.
+          assert (func1 (inl (b0, c0), b, a0) = func2 (inl (b0, c0), b, a0)).
+          { rewrite H0. reflexivity. }
+          rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
+        * f_equal. cbn.
+          assert (func1 (inr w, b, a0) = func2 (inr w, b, a0)).
+          { rewrite H0. reflexivity. }
+          rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
   Qed.
 End ArrowsLaws.
 
@@ -420,11 +474,11 @@ Section ProfunctorLaws.
 
   (* Profunctor laws. *)
 
-  Theorem dimap_id : forall (x : FreerArrowL E X Y),
+  Theorem dimap_id : forall (x : FreerArrowChoiceL E X Y),
       dimap id id x = x.
   Proof. induction x; sauto use:comp_id_r. Qed.
 
-  Theorem dimap_dimap : forall A' B' (x : FreerArrowL E X Y)
+  Theorem dimap_dimap : forall A' B' (x : FreerArrowChoiceL E X Y)
                           (f : A -> X) (g : A' -> A) (h : B -> B') (i : Y -> B),
       dimap (fun x => f (g x)) (fun x => h (i x)) x = dimap g h (dimap f i x).
   Proof.
@@ -454,7 +508,7 @@ Section ArrowsLaws.
   
   (* lmap and dimap *)
 
-  Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrowL E X Y),
+  Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrowChoiceL E X Y),
       lmap f x = dimap f id x.
   Proof.
     induction x; cbn; [reflexivity |].
