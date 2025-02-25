@@ -13,8 +13,6 @@ import Prelude hiding (id, (.))
 
 import Control.Arrow.Freer.FreerWeakArrow (FreerArrow)
 
--- |- Freer arrows. This is essentially free arrows (Notions of computation as
--- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
 {-- begin FreerArrowOps --}
 data FreerArrowOps :: (Type -> Type -> Type) -> Type -> Type -> Type where
   One :: FreerArrow e x y -> FreerArrowOps e x y
@@ -35,9 +33,6 @@ instance Profunctor (FreerArrowOps e) where
   dimap f g (Seq x y) = Seq (lmap f x) (rmap g y)
   dimap f g (And x y) = arr f >>> And x y >>> arr g
   dimap f g (Or  x y) = arr f >>> Or  x y >>> arr g 
-  -- dimap f g (Or  x y) = Or (dimap f g x) (dimap f g y)
-    -- Alternatively:
-    --   Comp (f' . f) id x (dimap g' g y)
 
   -- lmap can be implemented more efficiently without recursion
   lmap f (One x)   = One $ lmap f x

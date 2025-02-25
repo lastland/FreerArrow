@@ -17,9 +17,7 @@ import Prelude hiding (id, (.))
 {-- begin FreerArrowL --}
 data FreerArrowL e x y where
   Hom :: (x -> y) -> FreerArrowL e x y
-  Comp :: (x -> (a, c)) ->
-          e a b ->
-          FreerArrowL e (b, c) y ->
+  Comp :: (x -> (a, c)) -> e a b -> FreerArrowL e (b, c) y ->
           FreerArrowL e x y
 {-- end FreerArrowL --}
 
@@ -65,7 +63,7 @@ instance Profunctor (FreerArrowL e) where
 
 -- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrowL e) where
-  first' (Hom f) = Hom $ B.first f
+  first' (Hom f) = Hom $ \(x, a) -> (f x, a)
   first' (Comp f a b) =
     Comp (\(x, a') ->
              let (x', b') = f x in (x', (b', a')))

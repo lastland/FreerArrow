@@ -1,6 +1,5 @@
 {-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
@@ -18,11 +17,8 @@ import Prelude hiding (id, (.))
 {-- begin FreerArrow --}
 data FreerArrow e x y where
   Hom :: (x -> y) -> FreerArrow e x y
-  Comp :: (x -> (a, c)) ->
-          ((b, c) -> z) ->
-          e a b ->
-          FreerArrow e z y ->
-          FreerArrow e x y
+  Comp :: (x -> (a, c)) ->  ((b, c) -> z) -> e a b ->
+          FreerArrow e z y -> FreerArrow e x y
 {-- end FreerArrow --}
 
 -- A function that counts the number of effects in a freer arrow. This
