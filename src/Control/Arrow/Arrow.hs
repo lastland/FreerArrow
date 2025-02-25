@@ -20,7 +20,7 @@ class Category (cat :: k -> k -> Type) where
          cat b c -> cat a b -> cat a c
          
 class Category a => PreArrow a where
-  arr   :: (b -> c) -> a b c
+  arr :: (b -> c) -> a b c
 
 class PreArrow a => Arrow a where
   first :: a b c -> a (b, d) (c, d)
