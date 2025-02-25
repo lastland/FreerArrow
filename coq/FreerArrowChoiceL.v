@@ -252,40 +252,6 @@ Proof.
   inj_pair2_all. sfirstorder.
 Qed.
 
-(*
-Lemma comp_lmap_character : forall {E A B C Y W}
-                              (a : FreerArrowChoiceL E ((B * C) + W) Y)
-                              (Hsim: ArrowSimilar (comp (@first _ _ _ A a) (arr fst))
-                                       (lmap (@fst (B * C + W) A) a)),
-    let Hpre := ArrowSimilarCharTypEq _ _ Hsim in
-    let cpre := eq_rect _ (fun T => B * C * A -> T) (character (comp (@first _ _ _ A a) (arr fst))) _ Hpre in 
-    cpre = character (lmap (@fst (B * C) A) a) ->
-    let Hpost := ArrowSimilarCharTypEq _ _ (comp_lmap_Similar _ Hsim) in
-    let cpost := eq_rect _ (fun T => (B * (C * A)) -> T)
-                   (character (comp (lmap unassoc (first' a)) (@arr _ (Y * A) _ fst))) _ Hpost in 
-    cpost = (fun '(x, (y, _)) => character a (x, y)).
-Proof.
-  intros. destruct a.
-  - cbn in *. unfold cpost.
-    rewrite (UIP_refl _ _ Hpost). cbn.
-    intros. extensionality x. destruct x as [b [c a]]. reflexivity.
-  - cbn in *. revert H. unfold cpre, cpost, join.
-    inversion Hsim; inj_pair2_all.
-    pose proof (ArrowSimilarCharTypEq _ _ H0).
-    generalize Hpre Hpost.
-    generalize (character (comp (lmap (@unassoc B0 C0 A) (first' a)) (arr fst))).
-    rewrite H. intros. revert H1.
-    rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0). cbn.
-    intros.
-    extensionality x. destruct x as [? [? ?]]. cbn. 
-    remember (fun x : B * C * A =>
-        let '(a0, c0) := let '(x0, a) := x in let (x', b) := p x0 in (x', (b, a)) in (a0, fun b : B0 => c (b, c0))) as func1.
-    remember ((fun x : B * C * A => let '(a0, c) := p (fst x) in (a0, fun b : B0 => character a (b, c)))) as func2.
-    assert (func1 (b, c0, a0) = func2 (b, c0, a0)) by (rewrite H1; reflexivity).
-    sfirstorder.
-Qed.
-*)
-
 Lemma lmap_fst_character : forall {E A B C} (a : FreerArrowChoiceL E A B),
     let H := ArrowSimilarCharTypEq (@lmap _ (A * C) A B fst a) a (lmap_Similar a fst) in
     let ca := eq_rect _ (fun T => (A * C) -> T) (character (@lmap _ (A * C) A B fst a)) _ H in
