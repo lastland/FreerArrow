@@ -1,3 +1,5 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 module Control.Arrow.Arrow where
@@ -17,11 +19,16 @@ class Category (cat :: k -> k -> Type) where
   (.) :: forall (b :: k) (c :: k) (a :: k).
          cat b c -> cat a b -> cat a c
 
-class (Category a, Profunctor a) => PreArrow a where
+class Category a => PreArrow a where
   arr   :: (b -> c) -> a b c
 
-class (PreArrow a, Strong a) => Arrow a where
+class PreArrow a => Arrow a where
   first :: a b c -> a (b, d) (c, d)
+
+instance PreArrow a => Profunctor a where
+  dimap f g a = arr f >>> a >>> arr g
+
+instance (Strong a, PreArrow a) => Arrow a where
   first = first'
 
 (>>>) :: forall k (a :: k) (b :: k) (c :: k) (cat :: k -> k -> Type).
