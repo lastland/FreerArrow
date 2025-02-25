@@ -31,9 +31,9 @@ jobs:
     strategy:
         matrix:
             resolver-version:
-                - 'lts-21.25'
                 - 'lts-22.43'
                 - 'lts-23.10'
+                - 'nightly-2025-02-25'
     steps:
       - uses: actions/checkout@v4
       - uses: haskell-actions/setup@v2
