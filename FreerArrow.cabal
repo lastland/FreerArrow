@@ -25,6 +25,7 @@ source-repository head
 
 library
   exposed-modules:
+      Control.Arrow.Arrow
       Control.Arrow.Exception.ArrowException
       Control.Arrow.Freer.Elgot
       Control.Arrow.Freer.ElgotFinal
