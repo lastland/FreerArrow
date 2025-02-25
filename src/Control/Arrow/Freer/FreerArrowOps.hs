@@ -1,6 +1,3 @@
-{-# LANGUAGE TupleSections         #-}
-{-# LANGUAGE TypeOperators         #-}
-{-# LANGUAGE RankNTypes            #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
@@ -26,7 +23,7 @@ data FreerArrowOps :: (Type -> Type -> Type) -> Type -> Type -> Type where
          FreerArrowOps e (a, b) (c, d)
   Or  :: FreerArrowOps e a c -> FreerArrowOps e b d ->
          FreerArrowOps e (Either a b) (Either c d)
-{--- end FreerArrowOps --}
+{-- end FreerArrowOps --}
 
 embed :: e x y -> FreerArrowOps e x y
 embed f = One $ W.embed f 
