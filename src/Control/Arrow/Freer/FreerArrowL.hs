@@ -58,8 +58,6 @@ instance Profunctor (FreerArrowL e) where
   dimap f g (Hom h) = Hom (g . h . f)
   dimap f g (Comp f' x y) =
     Comp (f' . f) x (dimap id g y)
-    -- Alternatively:
-    --   Comp (f' . f) id x (dimap g' g y)
 
   -- lmap can be implemented more efficiently without recursion
   lmap f (Hom h) = Hom (h . f)

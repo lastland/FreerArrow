@@ -53,6 +53,7 @@ instance Profunctor (FreerArrowChoiceL e) where
   lmap f (Hom h) = Hom (h . f)
   lmap f (Comp f' x y) = Comp (f' . f) x y
 
+{-- begin Strong_FreerArrowChoiceL --}
 instance Strong (FreerArrowChoiceL e) where
   first' (Hom f) = Hom $ B.first f
   first' (Comp f a b) = Comp f' a (lmap g (first' b))
@@ -61,7 +62,9 @@ instance Strong (FreerArrowChoiceL e) where
               Right x' -> Right (x', c)
             g (Left (y, (z, x))) = (Left (y, z), x)
             g (Right (y, z))     = (Right y, z)
+{-- end Strong_FreerArrowChoiceL --}
 
+{-- begin Choice_FreerArrowChoiceL --}
 instance Choice (FreerArrowChoiceL e) where
   left' (Hom f) = Hom $ \case
     Left x -> Left $ f x
@@ -74,6 +77,7 @@ instance Choice (FreerArrowChoiceL e) where
               g (Left (y, z))     = Left $ Left (y, z)
               g (Right (Left w))  = Left $ Right w
               g (Right (Right y)) = Right y
+{-- end Choice_FreerArrowChoiceL --}
 
 instance Category (FreerArrowChoiceL e) where
   id = Hom id
