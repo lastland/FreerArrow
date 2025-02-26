@@ -86,13 +86,17 @@ instance Category (FreerArrow e) where
   f . (Comp f' x y) = Comp f' x (f . y)
 {-- end Category_FreerArrow --}
   
--- |- The type for effect handlers.
-type x ~> y = forall a b. x a b -> y a b
-
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, Arrow arr) =>
-  (e ~> arr) -> FreerArrow e x y -> arr x y
+  (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f x y) = lmap f (first (handler x)) >>>
                               interp handler y
+
+interp' :: (Profunctor arr, Arrow arr) =>
+  (e :-> arr) -> FreerArrow e x y -> (arr x y, Int)
+interp' _       (Hom f) = (arr f, 0)
+interp' handler (Comp f x y) =
+  let (z, n) = interp' handler y in
+  (lmap f (first (handler x)) >>> z, n + 1)
