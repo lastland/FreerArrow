@@ -8,3 +8,12 @@ Section ID.
   Proof. intros. reflexivity. Qed.
 
 End ID.
+
+Definition parFun {X Y A B} (f : X -> Y) (g : A -> B) : X * A -> Y * B :=
+  fun '(x, a) => (f x, g a).
+
+Definition parFunOr {X Y A B} (f : X -> Y) (g : A -> B) (x : X + A) : Y + B :=
+  match x with
+  | inl x => inl (f x)
+  | inr a => inr (g a)
+  end.

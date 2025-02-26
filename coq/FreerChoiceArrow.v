@@ -386,6 +386,65 @@ Section ArrowsLaws.
           rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
   Qed.
 
+  Theorem first_par :
+    forall (f : FreerChoiceArrow E X Y) (g : A -> B),
+      comp (first f) (arr (parFun id g)) ≈ comp (arr (parFun id g)) (first f).
+  Proof.
+    intros f g. induction f; intros; cbn.
+    - unfold id, parFun. 
+      econstructor. Unshelve.
+      2: { constructor. }
+      cbn. remember (ArrowSimilarCharTypEq _ _ _) as Ha.
+      cbn in Ha. rewrite (UIP_refl _ _ Ha). cbn.
+      extensionality x. hauto lq: on.
+    - cbn in IHf. inversion IHf; subst.
+      econstructor. Unshelve.
+      2: { constructor. destruct f; cbn; constructor.
+           inversion H; inj_pair2_all. assumption. }
+      cbn. destruct f.
+      + cbn. remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+        cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn. unfold join.
+        extensionality x. destruct x. cbn. unfold id. sauto.
+      + revert H0. cbn in *. inversion H. inj_pair2_all.
+        pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
+        remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
+        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _ _ _)) as Hpost.
+        cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
+        generalize (character (comp (lmap unassocsum (first' f)) (arr (parFun id g)))).
+        rewrite Ht. intros. revert H0.
+        rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
+        unfold join. cbn. intros.
+        remember (fun x : (B0 * C + W) * A =>
+                    match (let '(x0, a) := x in match s0 x0 with
+                                                | inl (x', b) => inl (x', (b, a))
+                                                | inr w => inr (w, a)
+                                                end) with
+                    | inl (a, c0) => inl (a, fun b : B1 => c (inl (b, c0)))
+                    | inr w => inr (c (inr w))
+                    end) as func1.
+        remember (fun x : (B0 * C + W) * A =>
+                    match
+                      (let
+                          '(x0, a) := parFun id g x in match s0 x0 with
+                                                       | inl (x', b) => inl (x', (b, a))
+                                                       | inr w => inr (w, a)
+                                                       end)
+                    with
+                    | inl (a, c) => inl (a, fun b : B1 => character (lmap unassocsum (first' f)) (inl (b, c)))
+                    | inr w => inr (character (lmap unassocsum (first' f)) (inr w))
+                    end) as func2.
+        extensionality x. destruct x. unfold id. cbn. destruct (s x).
+        * destruct p.
+          do 2 f_equal. extensionality b.
+          assert (func1 (inl (b, c0), a) = func2 (inl (b, c0), a)).
+          { rewrite H0. reflexivity. }
+          rewrite Heqfunc1, Heqfunc2 in H2. assumption.
+        * f_equal.
+          assert (func1 (inr w, a) = func2 (inr w, a)).
+          { rewrite H0. reflexivity. }
+          rewrite Heqfunc1, Heqfunc2 in H2. assumption.
+  Qed.
+
   Theorem first_assoc :
     forall (a : FreerChoiceArrow E X Y),
       comp (@first _ _ _ A (@first _ _ _ B a)) (arr assoc) ≈ comp (arr assoc) (first a).
@@ -543,6 +602,7 @@ Section ChoiceLaws.
       - sauto lq: on.
     Qed.
 
+
     Theorem left_comp_arr : forall (f : FreerChoiceArrow E X Y),
       comp f (arr inl) ≈ comp (arr inl) (@left _ _ _ A f).
     Proof.
@@ -609,6 +669,101 @@ Section ChoiceLaws.
           rewrite Heqfunc1, Heqfunc2 in H1. assumption.
     Qed.
 
+    Theorem left_par :
+      forall (f : FreerChoiceArrow E X Y) (g : A -> B),
+        comp (left f) (arr (parFunOr id g)) ≈ comp (arr (parFunOr id g)) (left f).
+    Proof.
+      intros f g. induction f; intros; cbn.
+      - econstructor. Unshelve.
+        2: { constructor. }
+        cbn. remember (ArrowSimilarCharTypEq _ _ _) as Ha.
+        cbn in Ha. rewrite (UIP_refl _ _ Ha). cbn.
+        extensionality x. hauto lq: on.
+      - cbn in IHf. inversion IHf; subst.
+        econstructor. Unshelve.
+        2: { constructor. destruct f; cbn; constructor.
+             inversion H; inj_pair2_all. assumption. }
+        cbn. destruct f.
+        + cbn. remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+          cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn. unfold join.
+          extensionality x. destruct x; cbn; unfold id; sauto. 
+        + revert H0. cbn in *. inversion H. inj_pair2_all.
+          pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
+          remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
+          remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _ _ _)) as Hpost.
+          cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
+          generalize (character
+                        (comp
+                           (lmap
+                              (fun x : B1 * C0 + (W0 + A) =>
+                                 match x with
+                                 | inl (y, z) => inl (inl (y, z))
+                                 | inr (inl w) => inl (inr w)
+                                 | inr (inr y) => inr y
+                                 end) (left' f)) (arr (parFunOr id g)))).
+          rewrite Ht. intros. revert H0.
+          rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
+          unfold join. cbn. intros.
+          remember (fun x : B0 * C + W + A =>
+                      match
+                        match x with
+                        | inl x0 => match s0 x0 with
+                                   | inl (x', z) => inl (x', z)
+                                   | inr w => inr (inl w)
+                                   end
+                        | inr y => inr (inr y)
+                        end
+                      with
+                      | inl (a, c0) => inl (a, fun b : B1 => c (inl (b, c0)))
+                      | inr w => inr (c (inr w))
+                      end) as func1.
+          remember (fun x : B0 * C + W + A =>
+                      match
+                        match parFunOr id g x with
+                        | inl x0 => match s0 x0 with
+                                   | inl (x', z) => inl (x', z)
+                                   | inr w => inr (inl w)
+                                   end
+                        | inr y => inr (inr y)
+                        end
+                      with
+                      | inl (a, c) =>
+                          inl
+                            (a,
+                              fun b : B1 =>
+                                character
+                                  (lmap
+                                     (fun x0 : B1 * C0 + (W0 + B) =>
+                                        match x0 with
+                                        | inl (y, z) => inl (inl (y, z))
+                                        | inr (inl w) => inl (inr w)
+                                        | inr (inr y) => inr y
+                                        end) (left' f)) (inl (b, c)))
+                      | inr w =>
+                          inr
+                            (character
+                               (lmap
+                                  (fun x0 : B1 * C0 + (W0 + B) =>
+                                     match x0 with
+                                     | inl (y, z) => inl (inl (y, z))
+                                     | inr (inl w0) => inl (inr w0)
+                                     | inr (inr y) => inr y
+                                     end) (left' f)) (inr w))
+                      end) as func2.
+          extensionality x. destruct x; unfold id; cbn.
+          * destruct (s x).
+            -- destruct p. do 2 f_equal. extensionality b.
+               assert (func1 (inl (inl (b, c0))) = func2 (inl (inl (b, c0)))).
+               { rewrite H0. reflexivity. }
+               rewrite Heqfunc1, Heqfunc2 in H2. assumption.
+            -- assert (func1 (inl (inr w)) = func2 (inl (inr w))).
+               { rewrite H0. reflexivity. }
+               rewrite Heqfunc1, Heqfunc2 in H2. f_equal. assumption.
+          * assert (func1 (inr a) = func2 (inr a)).
+            { rewrite H0. reflexivity. }
+            rewrite Heqfunc1, Heqfunc2 in H2. f_equal. assumption.
+    Qed.
+
     Definition assocsum {X Y Z} (x : (X + Y + Z)) : X + (Y + Z) :=
       match x with
       | (inl (inl x)) => inl x
@@ -616,133 +771,133 @@ Section ChoiceLaws.
       | (inr z) => inr (inr z)
       end.
 
-  Theorem left_assocsum :
-    forall (a : FreerChoiceArrow E X Y),
-      comp (@left _ _ _ A (@left _ _ _ B a)) (arr assocsum) ≈ comp (arr assocsum) (left a).
-  Proof.
-    induction a; cbn. 
-    - assert ((fun x : X + B + A =>
-             assocsum
-               match x with
-               | inl x0 => inl match x0 with
-                               | inl x1 => inl (y x1)
-                               | inr y => inr y
-                               end
-               | inr y => inr y
-               end) = (fun x : X + B + A => match assocsum x with
-                                         | inl x0 => inl (y x0)
-                                         | inr y0 => inr y0
-                                         end)) by
-      sauto lq: on use: functional_extensionality.
-      econstructor. Unshelve.
-      2: { constructor. }
-      cbn. remember (ArrowSimilarCharTypEq _ _ _) as HA.
-      unfold eq_rect. generalize HA. rewrite H.
-      intros HA0. rewrite (UIP_refl _ _ HA0). reflexivity.
-    - cbn in IHa. inversion IHa; subst.
-      econstructor. Unshelve.
-      2: { constructor. destruct a; cbn; constructor.
-           inversion H; inj_pair2_all. assumption. }
-      cbn. destruct a; cbn.
-      + remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
-        cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn.
-        extensionality x. unfold join. sauto.
-      + revert H0. cbn in *. inversion H. inj_pair2_all.
-        pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
-        remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
-        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _ _ _)) as Hpost.
-        cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
-        generalize (character
-           (comp
-              (lmap
-                 (fun x : B1 * C0 + (W0 + B + A) =>
-                  match x with
-                  | inl (y, z) => inl (inl (y, z))
-                  | inr (inl w) => inl (inr w)
-                  | inr (inr y) => inr y
-                  end)
-                 (left'
-                    (lmap
-                       (fun x : B1 * C0 + (W0 + B) =>
+    Theorem left_assocsum :
+      forall (a : FreerChoiceArrow E X Y),
+        comp (@left _ _ _ A (@left _ _ _ B a)) (arr assocsum) ≈ comp (arr assocsum) (left a).
+    Proof.
+      induction a; cbn. 
+      - assert ((fun x : X + B + A =>
+                   assocsum
+                     match x with
+                     | inl x0 => inl match x0 with
+                                  | inl x1 => inl (y x1)
+                                  | inr y => inr y
+                                  end
+                     | inr y => inr y
+                     end) = (fun x : X + B + A => match assocsum x with
+                                               | inl x0 => inl (y x0)
+                                               | inr y0 => inr y0
+                                               end)) by
+          sauto lq: on use: functional_extensionality.
+        econstructor. Unshelve.
+        2: { constructor. }
+        cbn. remember (ArrowSimilarCharTypEq _ _ _) as HA.
+        unfold eq_rect. generalize HA. rewrite H.
+        intros HA0. rewrite (UIP_refl _ _ HA0). reflexivity.
+      - cbn in IHa. inversion IHa; subst.
+        econstructor. Unshelve.
+        2: { constructor. destruct a; cbn; constructor.
+             inversion H; inj_pair2_all. assumption. }
+        cbn. destruct a; cbn.
+        + remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+          cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn.
+          extensionality x. unfold join. sauto.
+        + revert H0. cbn in *. inversion H. inj_pair2_all.
+          pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
+          remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
+          remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _ _ _)) as Hpost.
+          cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
+          generalize (character
+                        (comp
+                           (lmap
+                              (fun x : B1 * C0 + (W0 + B + A) =>
+                                 match x with
+                                 | inl (y, z) => inl (inl (y, z))
+                                 | inr (inl w) => inl (inr w)
+                                 | inr (inr y) => inr y
+                                 end)
+                              (left'
+                                 (lmap
+                                    (fun x : B1 * C0 + (W0 + B) =>
+                                       match x with
+                                       | inl (y, z) => inl (inl (y, z))
+                                       | inr (inl w) => inl (inr w)
+                                       | inr (inr y) => inr y
+                                       end) (left' a)))) (arr assocsum))).
+          rewrite Ht. intros. revert H0.
+          rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
+          unfold join. cbn. intros.
+          remember (fun x : B0 * C + W + B + A =>
+                      match
                         match x with
-                        | inl (y, z) => inl (inl (y, z))
-                        | inr (inl w) => inl (inr w)
-                        | inr (inr y) => inr y
-                        end) (left' a)))) (arr assocsum))).
-        rewrite Ht. intros. revert H0.
-        rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
-        unfold join. cbn. intros.
-        remember (fun x : B0 * C + W + B + A =>
-                    match
-                      match x with
-                      | inl x0 =>
-                          match
-                            match x0 with
-                            | inl x1 => match s0 x1 with
-                                       | inl (x', z) => inl (x', z)
-                                       | inr w => inr (inl w)
-                                       end
-                            | inr y => inr (inr y)
+                        | inl x0 =>
+                            match
+                              match x0 with
+                              | inl x1 => match s0 x1 with
+                                         | inl (x', z) => inl (x', z)
+                                         | inr w => inr (inl w)
+                                         end
+                              | inr y => inr (inr y)
+                              end
+                            with
+                            | inl (x', z) => inl (x', z)
+                            | inr w => inr (inl w)
                             end
-                          with
-                          | inl (x', z) => inl (x', z)
-                          | inr w => inr (inl w)
-                          end
-                      | inr y => inr (inr y)
-                      end
-                    with
-                    | inl (a0, c0) => inl (a0, fun b : B1 => c (inl (b, c0)))
-                    | inr w => inr (c (inr w))
-                    end) as func1.
-        remember (fun x : B0 * C + W + B + A =>
-                    match
-                      match assocsum x with
-                      | inl x0 => match s0 x0 with
-                                 | inl (x', z) => inl (x', z)
-                                 | inr w => inr (inl w)
-                                 end
-                      | inr y => inr (inr y)
-                      end
-                    with
-                    | inl (a0, c) =>
-                        inl
-                          (a0,
-                            fun b : B1 =>
-                              character
-                                (lmap
-                                   (fun x0 : B1 * C0 + (W0 + (B + A)) =>
-                                      match x0 with
-                                      | inl (y, z) => inl (inl (y, z))
-                                      | inr (inl w) => inl (inr w)
-                                      | inr (inr y) => inr y
-                                      end) (left' a)) (inl (b, c)))
-                    | inr w =>
-                        inr
-                          (character
-                             (lmap
-                                (fun x0 : B1 * C0 + (W0 + (B + A)) =>
-                                   match x0 with
-                                   | inl (y, z) => inl (inl (y, z))
-                                   | inr (inl w0) => inl (inr w0)
-                                   | inr (inr y) => inr y
-                                   end) (left' a)) (inr w))
-                    end) as func2.
-        extensionality x. destruct x as [[? | ?] | ?]; cbn.
-        * destruct (s x).
-          -- destruct p. repeat f_equal.
-             extensionality b.
-             assert (func1 (inl (inl (inl (b, c0)))) = func2 (inl (inl (inl (b, c0))))).
-             { rewrite H0. reflexivity. }
-             rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
-          -- assert (func1 (inl (inl (inr w))) = func2 (inl (inl (inr w)))).
-             { rewrite H0. reflexivity. }
-             rewrite Heqfunc1, Heqfunc2 in H2. f_equal. apply H2.
-        * assert (func1 (inl (inr b)) = func2 (inl (inr b))).
-          { rewrite H0. reflexivity. }
-          rewrite Heqfunc1, Heqfunc2 in H2. f_equal. apply H2.
-        * assert (func1 (inr a0) = func2 (inr a0)).
-          { rewrite H0. reflexivity. }
-          rewrite Heqfunc1, Heqfunc2 in H2. f_equal. apply H2.
-  Qed.
-          
+                        | inr y => inr (inr y)
+                        end
+                      with
+                      | inl (a0, c0) => inl (a0, fun b : B1 => c (inl (b, c0)))
+                      | inr w => inr (c (inr w))
+                      end) as func1.
+          remember (fun x : B0 * C + W + B + A =>
+                      match
+                        match assocsum x with
+                        | inl x0 => match s0 x0 with
+                                   | inl (x', z) => inl (x', z)
+                                   | inr w => inr (inl w)
+                                   end
+                        | inr y => inr (inr y)
+                        end
+                      with
+                      | inl (a0, c) =>
+                          inl
+                            (a0,
+                              fun b : B1 =>
+                                character
+                                  (lmap
+                                     (fun x0 : B1 * C0 + (W0 + (B + A)) =>
+                                        match x0 with
+                                        | inl (y, z) => inl (inl (y, z))
+                                        | inr (inl w) => inl (inr w)
+                                        | inr (inr y) => inr y
+                                        end) (left' a)) (inl (b, c)))
+                      | inr w =>
+                          inr
+                            (character
+                               (lmap
+                                  (fun x0 : B1 * C0 + (W0 + (B + A)) =>
+                                     match x0 with
+                                     | inl (y, z) => inl (inl (y, z))
+                                     | inr (inl w0) => inl (inr w0)
+                                     | inr (inr y) => inr y
+                                     end) (left' a)) (inr w))
+                      end) as func2.
+          extensionality x. destruct x as [[? | ?] | ?]; cbn.
+          * destruct (s x).
+            -- destruct p. repeat f_equal.
+               extensionality b.
+               assert (func1 (inl (inl (inl (b, c0)))) = func2 (inl (inl (inl (b, c0))))).
+               { rewrite H0. reflexivity. }
+               rewrite Heqfunc1, Heqfunc2 in H2. apply H2.
+            -- assert (func1 (inl (inl (inr w))) = func2 (inl (inl (inr w)))).
+               { rewrite H0. reflexivity. }
+               rewrite Heqfunc1, Heqfunc2 in H2. f_equal. apply H2.
+          * assert (func1 (inl (inr b)) = func2 (inl (inr b))).
+            { rewrite H0. reflexivity. }
+            rewrite Heqfunc1, Heqfunc2 in H2. f_equal. apply H2.
+          * assert (func1 (inr a0) = func2 (inr a0)).
+            { rewrite H0. reflexivity. }
+            rewrite Heqfunc1, Heqfunc2 in H2. f_equal. apply H2.
+    Qed.
+    
 End ChoiceLaws.

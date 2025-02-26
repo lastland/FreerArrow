@@ -81,9 +81,6 @@ Definition par {E X Y A B}
   (f : FreerArrow E X Y) (g : FreerArrow E A B) : FreerArrow E (X * A) (Y * B) :=
   comp (first f) (comp (arr swap) (comp (first g) (arr swap))).
 
-Definition parFun {X Y A B} (f : X -> Y) (g : A -> B) : X * A -> Y * B :=
-  fun '(x, a) => (f x, g a).
-
 Definition join {X Y A B C}
   (f : X -> A * C) (g : B * C -> Y) (x : X) : A * (B -> Y) :=
   let '(a, c) := f x in (a, fun b => g (b, c)).
