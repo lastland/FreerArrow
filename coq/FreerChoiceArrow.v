@@ -5,7 +5,7 @@ Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
 From FreerArrows Require Import Common Tactics.
-From Hammer Require Import Hammer Tactics.
+From Hammer Require Import Tactics.
 
 Open Scope type_scope.
 
@@ -146,14 +146,7 @@ Theorem ArrowSimilarCharTypEq {E X Y P} :
   forall (x : FreerChoiceArrow E X Y) (y : FreerChoiceArrow E P Y),
     ArrowSimilar x y ->
     CharacteristicType x = CharacteristicType y.
-Proof.
-  intros x. generalize dependent P. induction x.
-  - sauto lq: on.
-  - intros. inversion H; subst.
-    inversion H; subst.
-    inj_pair2_all.
-    sfirstorder.
-Qed.
+Proof. induction 1; sauto. Qed.
 
 (** This is more general than the normal transitivity because it is
     heterogeneous. *)
