@@ -2,5 +2,5 @@
 
 Common.v
 Tactics.v
-FreerArrowL.v
-FreerArrowChoiceL.v
+FreerArrow.v
+FreerChoiceArrow.v
