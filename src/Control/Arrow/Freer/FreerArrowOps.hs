@@ -4,18 +4,18 @@
 
 module Control.Arrow.Freer.FreerArrowOps where
 
-import qualified Control.Arrow.Freer.FreerWeakArrow as W
+import qualified Control.Arrow.Freer.FreerPreArrow as W
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
 import Data.Kind
 import Prelude hiding (id, (.))
 
-import Control.Arrow.Freer.FreerWeakArrow (FreerWeakArrow)
+import Control.Arrow.Freer.FreerPreArrow (FreerPreArrow)
 
 {-- begin FreerArrowOps --}
 data FreerArrowOps :: (Type -> Type -> Type) -> Type -> Type -> Type where
-  One :: FreerWeakArrow e x y -> FreerArrowOps e x y
+  One :: FreerPreArrow e x y -> FreerArrowOps e x y
   Seq :: FreerArrowOps e x y -> FreerArrowOps e y z -> FreerArrowOps e x z
   And :: FreerArrowOps e a c -> FreerArrowOps e b d ->
          FreerArrowOps e (a, b) (c, d)

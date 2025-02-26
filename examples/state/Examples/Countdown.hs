@@ -8,7 +8,7 @@ import qualified Control.Monad.State.MonadState       as S
 import qualified Control.Monad.Freer.FreerMonad       as M
 import qualified Control.Monad.Freer.FreerMonadFinal  as F
 import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
-import qualified Control.Arrow.Freer.FreerArrowChoice as AC
+import qualified Control.Arrow.Freer.FreerChoiceArrow as AC
 import qualified Control.Arrow.Freer.FreerArrowOps    as AO
 import           Control.Arrow.Freer.Elgot
 import qualified Control.Arrow.Freer.ElgotFinal       as EF
@@ -47,9 +47,9 @@ countMFE = Elgot1 (\_ -> do
                       else (S.put (n - 1) >> (return $ Right (n - 1)))) return 
   
 
-countA :: Elgot AC.FreerArrowChoice (StateEff Int) Int Int
+countA :: Elgot AC.FreerChoiceArrow (StateEff Int) Int Int
 countA =
-  let go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
+  let go :: AC.FreerChoiceArrow (StateEff Int) Int (Either Int Int)
       !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
             (right $ lmap (\x -> x - 1) put) in
     Elgot go id
@@ -71,9 +71,9 @@ countAO' =
     ElgotC go id
     
 
-countAEF :: EF.Elgot AC.FreerArrowChoice (StateEff Int) Int Int
+countAEF :: EF.Elgot AC.FreerChoiceArrow (StateEff Int) Int Int
 countAEF =
-  let go :: AC.FreerArrowChoice (StateEff Int) Int (Either Int Int)
+  let go :: AC.FreerChoiceArrow (StateEff Int) Int (Either Int Int)
       !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
             (right $ lmap (\x -> x - 1) put) in
     EF.elgot go id

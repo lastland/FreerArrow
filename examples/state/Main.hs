@@ -65,8 +65,8 @@ interpAConcurrently :: (Profunctor arr, Arrow arr) =>
                        (forall a b. e a b -> arr a b) ->
                        FreerArrow e x y -> IO (arr x y)
 interpAConcurrently _       (Hom f) = pure $ arr f
-interpAConcurrently handler (Comp f g x y) = do
-  (a, b) <- concurrently (pure $ dimap f g (first (handler x)))
+interpAConcurrently handler (Comp f x y) = do
+  (a, b) <- concurrently (pure $ lmap f (first (handler x)))
                          (interpAConcurrently handler y) 
   pure (a >>> b)
 

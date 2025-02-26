@@ -9,7 +9,7 @@
 module Control.Arrow.State.ArrowState where
 
 import qualified Control.Monad.State as M
-import qualified Control.Arrow.Freer.FreerArrowChoice as C
+import qualified Control.Arrow.Freer.FreerChoiceArrow as C
 import qualified Control.Arrow.Freer.FreerArrowFinal as F
 import qualified Control.Arrow.Freer.FreerArrowSimple as S
 import qualified Control.Arrow.Freer.FreerArrowOps as O
@@ -18,7 +18,7 @@ import qualified Control.Arrow.Freer.KleisliFreer as K
 import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
-import Control.Arrow.Freer.FreerArrowChoice (FreerArrowChoice)
+import Control.Arrow.Freer.FreerChoiceArrow (FreerChoiceArrow)
 import Control.Arrow.Freer.KleisliFreer     (KleisliFreer)
 import Control.Monad.Freer.Sum1
 import Control.Arrow.Freer.Sum2
@@ -60,7 +60,7 @@ instance Inj2 (StateEff s) e => ArrowState s (O.FreerArrowOps e) where
   get = O.embed $ inj2 Get
   put = O.embed $ inj2 Put
 
-instance Inj2 (StateEff s) e => ArrowState s (FreerArrowChoice e) where
+instance Inj2 (StateEff s) e => ArrowState s (FreerChoiceArrow e) where
   get = C.embed $ inj2 Get
   put = C.embed $ inj2 Put
 

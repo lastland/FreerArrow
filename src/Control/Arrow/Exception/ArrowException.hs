@@ -9,18 +9,19 @@
 
 module Control.Arrow.Exception.ArrowException where
 
-import qualified Control.Arrow.Freer.FreerArrowChoice as C
+import qualified Control.Arrow.Freer.FreerChoiceArrow as C
 import qualified Control.Arrow.Freer.KleisliFreer as K
 
 import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
-import Control.Arrow.Freer.FreerArrowChoice (FreerArrowChoice)
+import Control.Arrow.Freer.FreerChoiceArrow (FreerChoiceArrow)
 import Control.Arrow.Freer.KleisliFreer     (KleisliFreer(..))
 import Control.Monad.Freer.FreerMonad       (FreerMonad(..))
 import Control.Monad.Freer.Sum1
 import Control.Arrow.Freer.Sum2
 import Data.Kind
+import Data.Profunctor
 import Prelude hiding (id, (.))
 
 class Arrow a => ArrowException e a where
@@ -55,7 +56,7 @@ data ExceptionEff1 :: Type -> Type -> Type where
 instance Inj2 (ExceptionEff ex) e => ArrowException ex (FreerArrow e) where
   throwError = embed $ inj2 Throw
 
-instance Inj2 (ExceptionEff ex) e => ArrowException ex (FreerArrowChoice e) where
+instance Inj2 (ExceptionEff ex) e => ArrowException ex (FreerChoiceArrow e) where
   throwError = C.embed $ inj2 Throw
 
 instance Inj1 (ExceptionEff1 ex) e => ArrowException ex (KleisliFreer e) where
@@ -69,23 +70,23 @@ catchErrorF :: FreerArrow (Ex ex e) x y ->
                FreerArrow (Ex ex e) ex y ->
                FreerArrow (Ex ex e) x y
 catchErrorF (Hom f) _                   = Hom f 
-catchErrorF (Comp f _ (Inl2 Throw) _) h = Comp f' g' (Inl2 Throw) h
+catchErrorF (Comp f (Inl2 Throw) _) h = Comp f' (Inl2 Throw) (lmap g' h)
   where f' x = let (e, c) = f x in (e, (e, c))
         g' (_, (e, _)) = e
-catchErrorF (Comp f g e x) h            = Comp f g e $ catchErrorF x h
+catchErrorF (Comp f e x) h            = Comp f e $ catchErrorF x h
 
 -- This only works when [ExceptionEff] is the leftmost effect.
-catchErrorFC :: FreerArrowChoice (Ex ex e) x y ->
-                FreerArrowChoice (Ex ex e) ex y ->
-                FreerArrowChoice (Ex ex e) x y
+catchErrorFC :: FreerChoiceArrow (Ex ex e) x y ->
+                FreerChoiceArrow (Ex ex e) ex y ->
+                FreerChoiceArrow (Ex ex e) x y
 catchErrorFC (C.Hom f) _                   = C.Hom f 
-catchErrorFC (C.Comp f g (Inl2 Throw) k) h = C.Comp f' g' (Inl2 Throw) (h ||| k)
+catchErrorFC (C.Comp f (Inl2 Throw) k) h = C.Comp f' (Inl2 Throw) (lmap g' (h ||| k))
   where f' x = case f x of
           Left (e, c) -> Left (e, (e, c))
           Right w     -> Right w
         g' (Left (_, (e, _))) = Left e
-        g' (Right w)          = Right $ g (Right w)
-catchErrorFC (C.Comp f g e x) h            = C.Comp f g e $ catchErrorFC x h
+        g' (Right w)          = Right $ Right w
+catchErrorFC (C.Comp f e x) h            = C.Comp f e $ catchErrorFC x h
 
 -- This only works when [ExceptionEff1] is the leftmost effect.
 catchErrorK :: KleisliFreer (Ex1 ex e) x y ->

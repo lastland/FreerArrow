@@ -4,8 +4,9 @@
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
 
-module Control.Arrow.Freer.FreerArrowL where
+module Control.Arrow.Freer.FreerArrowB where
 
+import qualified Data.Bifunctor as B (first)
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
@@ -13,19 +14,19 @@ import Prelude hiding (id, (.))
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
-{-- begin FreerArrowL --}
-data FreerArrowL e x y where
-  Hom :: (x -> y) -> FreerArrowL e x y
-  Comp :: (x -> (a, c)) -> e a b ->
-          FreerArrowL e (b, c) y -> FreerArrowL e x y
-{-- end FreerArrowL --}
+{-- begin FreerArrowB --}
+data FreerArrowB e x y where
+  Hom :: (x -> y) -> FreerArrowB e x y
+  Comp :: (x -> (a, c)) ->  ((b, c) -> z) -> e a b ->
+          FreerArrowB e z y -> FreerArrowB e x y
+{-- end FreerArrowB --}
 
 -- A function that counts the number of effects in a freer arrow. This
 -- illustrates that some static analysis can be performed on freer arrows. Even
 -- if the effect can be stateful, we do not need to provide an initial state.
-count :: FreerArrowL e x y -> Int
+count :: FreerArrowB e x y -> Int
 count (Hom _) = 0
-count (Comp _ _ y) = 1 + count y
+count (Comp _ _ _ y) = 1 + count y
 
 -- The following is what I call a reified arrow. It is free if we define an
 -- equality that satisifies arrow laws and profunctor laws.
@@ -38,53 +39,47 @@ data ReifiedArrow e x y where
 --}
 
 -- |- Embed an effect in freer arrows.                        
-embed :: e x y -> FreerArrowL e x y
-embed f = Comp (,()) f (lmap fst id)
+embed :: e x y -> FreerArrowB e x y
+embed f = Comp (,()) fst f id
 
--- ((x, y), z), (x, (y, z)), and (x, y, z) are all different in Haskell, unlike
--- in Rocq Prover.
-assoc :: ((x, y), z) -> ((x, y), z)
-assoc ((x, y), z) = ((x, y), z)
+{-- begin Arrow_FreerArrowB --}
+-- |- Freer arrows are arrows.
+instance Arrow (FreerArrowB e) where
+  arr = Hom
+  first = first'
+{-- end Arrow_FreerArrowB --}
 
-unassoc :: (x, (y, z)) -> ((x, y), z)
-unassoc (x, (y, z)) = ((x, y), z)
-
-{-- begin Strong_FreerArrowL --}
+{-- begin Strong_FreerArrowB --}
 -- |- Freer arrows are profunctors.
-instance Profunctor (FreerArrowL e) where
+instance Profunctor (FreerArrowB e) where
   dimap f g (Hom h) = Hom (g . h . f)
-  dimap f g (Comp f' x y) =
-    Comp (f' . f) x (dimap id g y)
+  dimap f g (Comp f' g' x y) =
+    Comp (f' . f) g' x (dimap id g y)
+    -- Alternatively:
+    --   Comp (f' . f) id x (dimap g' g y)
 
   -- lmap can be implemented more efficiently without recursion
   lmap f (Hom h) = Hom (h . f)
-  lmap f (Comp f' x y) = Comp (f' . f) x y
+  lmap f (Comp f' g' x y) = Comp (f' . f) g' x y
 
 -- |- Freer arrows are strong profunctors.
-instance Strong (FreerArrowL e) where
-  first' (Hom f) = Hom $ \(x, a) -> (f x, a)
-  first' (Comp f a b) =
-    Comp (\(x, a') ->
-             let (x', b') = f x in (x', (b', a')))
-         a (lmap unassoc (first' b))
-{-- end Strong_FreerArrowL --}
+instance Strong (FreerArrowB e) where
+  first' (Hom f) = Hom $ B.first f
+  first' (Comp f g a b) =
+    Comp (\(x, c) ->
+             let (x', z) = f x in (x', (z, c)))
+         (\(y, (z, x)) -> (g (y, z), x))
+         a (first' b)
+{-- end Strong_FreerArrowB --}
 
-{-- begin Arrow_FreerArrowL --}
--- |- Freer arrows are arrows.
-instance Arrow (FreerArrowL e) where
-  arr = Hom
-  first = first'
-{-- end Arrow_FreerArrowL --}
-
-
-{-- begin Category_FreerArrowL --}
+{-- begin Category_FreerArrowB --}
 -- |- Freer arrows are categories.
-instance Category (FreerArrowL e) where
+instance Category (FreerArrowB e) where
   id = Hom id
 
   f . (Hom g) = lmap g f
-  f . (Comp f' x y) = Comp f' x (f . y)
-{-- end Category_FreerArrowL --}
+  f . (Comp f' g' x y) = Comp f' g' x (f . y)
+{-- end Category_FreerArrowB --}
   
 -- |- The type for effect handlers.
 type x ~> y = forall a b. x a b -> y a b
@@ -92,7 +87,7 @@ type x ~> y = forall a b. x a b -> y a b
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, Arrow arr) =>
-  (e ~> arr) -> FreerArrowL e x y -> arr x y
+  (e ~> arr) -> FreerArrowB e x y -> arr x y
 interp _       (Hom f) = arr f
-interp handler (Comp f x y) = lmap f (first (handler x)) >>>
-                              interp handler y
+interp handler (Comp f g x y) = dimap f g (first (handler x)) >>>
+                                        interp handler y
