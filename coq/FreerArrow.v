@@ -5,7 +5,7 @@ Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
 From FreerArrows Require Import Common Tactics.
-From Hammer Require Import Tactics.
+From Hammer Require Import Hammer Tactics.
 
 Open Scope type_scope.
 
@@ -16,6 +16,9 @@ Inductive FreerArrow (E : Type -> Type -> Type) (X Y : Type) : Type :=
 
 Arguments Hom {E} {X} {Y}.
 Arguments Comp {E} {X} {Y} {A} {B} {C}.
+
+  Definition swap {X Y} : X * Y -> Y * X :=
+    fun '(x, y) => (y, x).
 
 Section Arrows.
 
@@ -73,6 +76,13 @@ Section Arrows.
     dimap id.
 
 End Arrows.
+
+Definition par {E X Y A B}
+  (f : FreerArrow E X Y) (g : FreerArrow E A B) : FreerArrow E (X * A) (Y * B) :=
+  comp (first f) (comp (arr swap) (comp (first g) (arr swap))).
+
+Definition parFun {X Y A B} (f : X -> Y) (g : A -> B) : X * A -> Y * B :=
+  fun '(x, a) => (f x, g a).
 
 Definition join {X Y A B C}
   (f : X -> A * C) (g : B * C -> Y) (x : X) : A * (B -> Y) :=
@@ -359,6 +369,50 @@ Section ArrowsLaws.
       rewrite H1. cbn. rewrite H2. intros. revert Htarget. revert H6.
       rewrite (UIP_refl _ _ H0). rewrite (UIP_refl _ _ H4). rewrite (UIP_refl _ _ H5).
       intros. extensionality x. sauto.
+  Qed.
+
+  Theorem first_par :
+    forall (f : FreerArrow E X Y) (g : A -> B),
+      comp (first f) (arr (parFun id g)) ≈ comp (arr (parFun id g)) (first f).
+  Proof.
+    intros f g. induction f; intros; cbn.
+    - econstructor. Unshelve.
+      2: { constructor. }
+      cbn. remember (ArrowSimilarCharTypEq _ _ _) as Ha.
+      cbn in Ha. rewrite (UIP_refl _ _ Ha). cbn.
+      extensionality x. destruct x. reflexivity.
+    - cbn in IHf. inversion IHf; subst.
+      econstructor. Unshelve.
+      2: { constructor. destruct f; cbn; constructor.
+           inversion H; inj_pair2_all. assumption. }
+      cbn. destruct f.
+      + cbn. remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
+        cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn. unfold join.
+        extensionality x. destruct x. cbn. unfold id. sauto.
+      + revert H0. cbn in *. inversion H. inj_pair2_all.
+        pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
+        remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
+        remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _)) as Hpost.
+        cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
+        generalize (character (comp (lmap unassoc (first' f)) (arr (parFun id g)))).
+        rewrite Ht. intros. revert H0.
+        rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
+        unfold join. cbn. intros.
+        remember (fun x : B0 * C * A =>
+                    let '(a, c0) :=
+                      let '(x0, a) := x in
+                      let (x', b) := p0 x0 in
+                      (x', (b, a)) in
+                    (a, fun b : B1 => c (b, c0))) as func1.
+        remember (fun x : B0 * C * A =>
+                    let
+                      '(a, c) := let '(x0, a) := parFun id g x in let (x', b) := p0 x0 in (x', (b, a)) in
+                    (a, fun b : B1 => character (lmap unassoc (first' f)) (b, c))) as func2.
+        extensionality x. destruct x. unfold id. cbn. destruct (p x).
+        f_equal. extensionality b.
+        assert (func1 (b, c0, a) = func2 (b, c0, a)).
+        { rewrite H0. reflexivity. }
+        rewrite Heqfunc1, Heqfunc2 in H2. assumption.
   Qed.
 
   Theorem first_assoc :
