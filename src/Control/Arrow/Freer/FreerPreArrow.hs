@@ -17,7 +17,7 @@ data FreerPreArrow e x y where
   Hom   :: (x -> y) -> FreerPreArrow e x y
   Comp  :: (x -> a) -> e a z ->
            FreerPreArrow e z y -> FreerPreArrow e x y
-{--- end FreerPreArrow --}
+{-- end FreerPreArrow --}
 
 -- A function that counts the number of effects in a freer arrow. This
 -- illustrates that some static analysis can be performed on freer arrows. Even
