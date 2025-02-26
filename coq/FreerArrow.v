@@ -197,8 +197,8 @@ Proof.
   constructor.
   - intros x. induction x.
     + econstructor. cbn.
-      Unshelve. 2: { constructor. }
-      rewrite (UIP_refl _ _ (ArrowSimilarCharTypEq (Hom y) (Hom y) (HomSimilar y y))).
+      Unshelve. 2: { reflexivity. }
+      rewrite (UIP_refl _ _ (ArrowSimilarCharTypEq _ _ _)).
       reflexivity.
     + apply ArrowEqInd; sfirstorder.
   - intros x y. inversion 1; subst.
