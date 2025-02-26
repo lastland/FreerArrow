@@ -70,6 +70,9 @@ Section Arrows.
                             (comp y (arr g))
     end.
 
+  Definition rmap {X Y B} : (Y -> B) -> FreerArrowChoiceL E X Y -> FreerArrowChoiceL E X B :=
+    dimap id.
+
 End Arrows.
 
 Definition join {X Y A B C W}
@@ -457,6 +460,13 @@ Section ProfunctorLaws.
     inversion IHx. inj_pair2_all. assumption.
   Qed.
 
+  Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrowChoiceL E X Y),
+      lmap f x = dimap f id x.
+  Proof.
+    induction x; cbn; [reflexivity |].
+    sauto use: @comp_id_r unfold: arr.
+  Qed.
+
 End ProfunctorLaws.
 
 #[export]
@@ -467,18 +477,23 @@ Hint Resolve dimap_id : freer_arrow.
 Hint Resolve dimap_dimap : freer_arrow. 
 *)
 
-Section ArrowsLaws.
+Section MoreProfunctorLaws.
 
   Context {E :Type -> Type -> Type}.
   Context {X Y Z A B: Type}.
   
-  (* lmap and dimap *)
-
-  Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrowChoiceL E X Y),
-      lmap f x = dimap f id x.
+  Theorem lmap_lmap :  forall A' (x : FreerArrowChoiceL E X Y) (f : A -> X) (g : A' -> A),
+      lmap (fun x => f (g x)) x = lmap g (lmap f x).
   Proof.
-    induction x; cbn; [reflexivity |].
-    sauto use: @comp_id_r unfold: arr.
+    intros. rewrite !lmap_dimap.
+    apply dimap_dimap.
   Qed.
 
-End ArrowsLaws.
+  Theorem rmap_rmap :  forall B' (x : FreerArrowChoiceL E X Y) (h : B -> B') (i : Y -> B),
+      rmap (fun x => h (i x)) x = rmap h (rmap i x).
+  Proof.
+    intros. unfold rmap.
+    apply dimap_dimap.
+  Qed.
+
+End MoreProfunctorLaws.

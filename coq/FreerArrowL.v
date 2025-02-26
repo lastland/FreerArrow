@@ -5,7 +5,7 @@ Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
 From FreerArrows Require Import Common Tactics.
-From Hammer Require Import Tactics.
+From Hammer Require Import Hammer Tactics.
 
 Open Scope type_scope.
 
@@ -68,6 +68,9 @@ Section Arrows.
     | Comp f' x y => Comp (fun x => f' (f x)) x
                             (comp y (arr g))
     end.
+
+  Definition rmap {X Y B} : (Y -> B) -> FreerArrowL E X Y -> FreerArrowL E X B :=
+    dimap id.
 
 End Arrows.
 
@@ -437,23 +440,6 @@ Section ProfunctorLaws.
     inversion IHx. inj_pair2_all. assumption.
   Qed.
 
-End ProfunctorLaws.
-
-#[export]
-Hint Resolve dimap_id : freer_arrow.
-
-(*
-#[export]
-Hint Resolve dimap_dimap : freer_arrow. 
-*)
-
-Section ArrowsLaws.
-
-  Context {E :Type -> Type -> Type}.
-  Context {X Y Z A B: Type}.
-  
-  (* lmap and dimap *)
-
   Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrowL E X Y),
       lmap f x = dimap f id x.
   Proof.
@@ -461,4 +447,26 @@ Section ArrowsLaws.
     sauto use: @comp_id_r unfold: arr.
   Qed.
 
-End ArrowsLaws.
+End ProfunctorLaws.
+
+Section MoreProfunctorLaws.
+
+  Context {E :Type -> Type -> Type}.
+  Context {X Y A B: Type}.
+  
+  Theorem lmap_lmap :  forall A' (x : FreerArrowL E X Y) (f : A -> X) (g : A' -> A),
+      lmap (fun x => f (g x)) x = lmap g (lmap f x).
+  Proof.
+    intros. rewrite !lmap_dimap.
+    apply dimap_dimap.
+  Qed.
+
+  Theorem rmap_rmap :  forall B' (x : FreerArrowL E X Y) (h : B -> B') (i : Y -> B),
+      rmap (fun x => h (i x)) x = rmap h (rmap i x).
+  Proof.
+    intros. unfold rmap.
+    apply dimap_dimap.
+  Qed.
+
+End MoreProfunctorLaws.
+
