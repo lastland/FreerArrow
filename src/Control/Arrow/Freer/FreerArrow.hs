@@ -49,7 +49,6 @@ assoc ((x, y), z) = ((x, y), z)
 unassoc :: (x, (y, z)) -> ((x, y), z)
 unassoc (x, (y, z)) = ((x, y), z)
 
-{-- begin Strong_FreerArrow --}
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where
   dimap f g (Hom h) = Hom (g . h . f)
@@ -60,6 +59,7 @@ instance Profunctor (FreerArrow e) where
   lmap f (Hom h) = Hom (h . f)
   lmap f (Comp f' x y) = Comp (f' . f) x y
 
+{-- begin Strong_FreerArrow --}
 -- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ \(x, a) -> (f x, a)
