@@ -15,8 +15,8 @@ import Prelude hiding (id, (.))
 {-- begin FreerPreArrow --}
 data FreerPreArrow e x y where
   Hom   :: (x -> y) -> FreerPreArrow e x y
-  Comp  :: (x -> a) -> e a z ->
-           FreerPreArrow e z y -> FreerPreArrow e x y
+  Comp  :: (x -> a) -> e a b ->
+           FreerPreArrow e b y -> FreerPreArrow e x y
 {-- end FreerPreArrow --}
 
 -- A function that counts the number of effects in a freer arrow. This
@@ -40,20 +40,19 @@ data ReifiedArrow e x y where
 embed :: e x y -> FreerPreArrow e x y
 embed f = Comp id f id
 
-{-- begin Strong_FreerPreArrow --}
--- |- Freer arrows are profunctors.
+{-- begin Profunctor_FreerPreArrow --}
+-- |- Freer pre-arrows are profunctors.
 instance Profunctor (FreerPreArrow e) where
   dimap f g (Hom h) = Hom (g . h . f)
   dimap f g (Comp f' x y) = Comp (f' . f) x (dimap id g y)
-    -- Alternatively:
-    --   Comp (f' . f) id x (dimap g' g y)
 
   -- lmap can be implemented more efficiently without recursion
   lmap f (Hom h) = Hom (h . f)
   lmap f (Comp f' x y) = Comp (f' . f) x y
+{-- end Profunctor_FreerPreArrow --}
 
 {-- begin Category_FreerPreArrow --}
--- |- Freer arrows are categories.
+-- |- Freer pre-arrows are categories.
 instance Category (FreerPreArrow e) where
   id = Hom id
 
