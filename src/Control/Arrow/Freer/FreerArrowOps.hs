@@ -11,11 +11,11 @@ import Data.Profunctor
 import Data.Kind
 import Prelude hiding (id, (.))
 
-import Control.Arrow.Freer.FreerWeakArrow (FreerArrow)
+import Control.Arrow.Freer.FreerWeakArrow (FreerWeakArrow)
 
 {-- begin FreerArrowOps --}
 data FreerArrowOps :: (Type -> Type -> Type) -> Type -> Type -> Type where
-  One :: FreerArrow e x y -> FreerArrowOps e x y
+  One :: FreerWeakArrow e x y -> FreerArrowOps e x y
   Seq :: FreerArrowOps e x y -> FreerArrowOps e y z -> FreerArrowOps e x z
   And :: FreerArrowOps e a c -> FreerArrowOps e b d ->
          FreerArrowOps e (a, b) (c, d)
