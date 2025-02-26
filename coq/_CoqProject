@@ -1,6 +1,9 @@
 -Q . FreerArrows
 
 Common.v
+Classes.v
+CounterT.v
 Tactics.v
 FreerArrow.v
 FreerChoiceArrow.v
+FreerArrowCounter.v
