@@ -71,6 +71,12 @@ instance ArrowChoice (FreerArrowOps e) where
     where g (Left  a) = a
           g (Right a) = a
 
+instance Show (FreerArrowOps e x y) where
+  show (One _) = "One"
+  show (Seq f g) = "(" ++ show f ++ ">>>" ++ show g ++ ")"
+  show (And f g) = "(" ++ show f ++ "***" ++ show g ++ ")"
+  show (Or f g) = "(" ++ show f ++ "+++" ++ show g ++ ")"
+
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, ArrowChoice arr) =>

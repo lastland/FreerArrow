@@ -3,6 +3,7 @@
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Control.Arrow.Freer.FreerChoiceArrow where
 
@@ -84,6 +85,10 @@ instance Category (FreerChoiceArrow e) where
 
   f . (Hom g)          = lmap g f
   f . (Comp f' x y) = Comp f' x (f . y)
+
+instance (forall a b. Show (e a b)) => Show (FreerChoiceArrow e x y) where
+  show (Hom _) = "Hom"
+  show (Comp _ e c) = "(" ++ show e ++ " >>> " ++ show c ++ ")"
 
 type x ~> y = forall a b. x a b -> y a b
 

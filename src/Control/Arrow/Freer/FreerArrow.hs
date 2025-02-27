@@ -3,6 +3,7 @@
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE KindSignatures        #-}
 {-# LANGUAGE ImpredicativeTypes    #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 
 module Control.Arrow.Freer.FreerArrow where
 
@@ -100,3 +101,7 @@ interp' _       (Hom f) = (arr f, 0)
 interp' handler (Comp f x y) =
   let (z, n) = interp' handler y in
   (lmap f (first (handler x)) >>> z, n + 1)
+
+instance (forall a b. Show (e a b)) => Show (FreerArrow e x y) where
+  show (Hom _) = "Hom"
+  show (Comp _ e c) = "(" ++ show e ++ " >>> " ++ show c ++ ")"
