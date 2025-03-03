@@ -7,7 +7,7 @@ Class Profunctor (F : Type -> Type -> Type) :=
 
 Class StrongProfunctor (F : Type -> Type -> Type) `{Profunctor F} :=
   {
-    first' {A B C} : F A B -> F (A * C) (B * C)
+    first {A B C} : F A B -> F (A * C) (B * C)
   }. 
 
 Class Category (F : Type -> Type -> Type) :=
@@ -16,12 +16,32 @@ Class Category (F : Type -> Type -> Type) :=
     comp {A B C} : F A B -> F B C -> F A C
   }.
 
+Notation "x >>> y" := (comp x y) (at level 42, right associativity).
+
 Class PreArrow  (F : Type -> Type -> Type) `{Category F} :=
   {
     arr {A B} : (A -> B) -> F A B 
   }.
 
+(* We don't define anything here since [first] is already included. *)
 Class Arrow (F : Type -> Type -> Type) `{PreArrow F} `{StrongProfunctor F} :=
-  { 
-    first  {A B C} : F A B -> F (A * C) (B * C)
-  }.
+  {}.
+
+#[export] Instance Arrow__Infer F `{PreArrow F} `{StrongProfunctor F} : Arrow F.
+Defined.
+
+(** Functional arrows are arrows. *)
+#[export] Instance Profunctor__Fun : Profunctor (fun A B => A -> B) :=
+  {| dimap := fun _ _ _ _ f g h a => g (h (f a)) |}.
+
+#[export] Instance StrongProfunctor__Fun : StrongProfunctor (fun A B => A -> B) :=
+  {| first := fun A _ C f '((a, c) : A * C) => (f a, c) |}.
+
+#[export] Instance Category__Fun : Category (fun A B => A -> B) :=
+  {| id := fun _ x => x;
+    comp := fun _ _ _ f g a => g (f a) |}.
+
+#[export] Instance PreArrow__Fun : PreArrow (fun A B => A -> B) :=
+  {| arr := fun _ _ f => f |}.
+
+#[export] Instance Arrow__Fun : Arrow (fun A B => A -> B) := Arrow__Infer _.
