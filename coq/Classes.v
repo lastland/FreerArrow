@@ -8,7 +8,12 @@ Class Profunctor (F : Type -> Type -> Type) :=
 Class StrongProfunctor (F : Type -> Type -> Type) `{Profunctor F} :=
   {
     first {A B C} : F A B -> F (A * C) (B * C)
-  }. 
+  }.
+
+Class ChoiceProfunctor  (F : Type -> Type -> Type) `{Profunctor F} :=
+  {
+    left {A B C} : F A B -> F (A + C) (B + C)
+  }.
 
 Class Category (F : Type -> Type -> Type) :=
   {
@@ -27,7 +32,13 @@ Class PreArrow  (F : Type -> Type -> Type) `{Category F} :=
 Class Arrow (F : Type -> Type -> Type) `{PreArrow F} `{StrongProfunctor F} :=
   {}.
 
+Class ChoiceArrow (F : Type -> Type -> Type) `{PreArrow F} `{ChoiceProfunctor F} :=
+  {}.
+
 #[export] Instance Arrow__Infer F `{PreArrow F} `{StrongProfunctor F} : Arrow F.
+Defined.
+
+#[export] Instance ChoiceArrow__Infer F `{PreArrow F} `{ChoiceProfunctor F} : ChoiceArrow F.
 Defined.
 
 (** Functional arrows are arrows. *)
@@ -37,6 +48,13 @@ Defined.
 #[export] Instance StrongProfunctor__Fun : StrongProfunctor (fun A B => A -> B) :=
   {| first := fun A _ C f '((a, c) : A * C) => (f a, c) |}.
 
+#[export] Instance ChoiceProfunctor__Fun : ChoiceProfunctor (fun A B => A -> B) :=
+  {| left := fun A _ C f (x : A + C) =>
+                match x with
+                | inl a => inl (f a)
+                | inr c => inr c
+                end |}.
+
 #[export] Instance Category__Fun : Category (fun A B => A -> B) :=
   {| id := fun _ x => x;
     comp := fun _ _ _ f g a => g (f a) |}.
@@ -45,3 +63,5 @@ Defined.
   {| arr := fun _ _ f => f |}.
 
 #[export] Instance Arrow__Fun : Arrow (fun A B => A -> B) := Arrow__Infer _.
+
+#[export] Instance ChoiceArrow__Fun : ChoiceArrow (fun A B => A -> B) := ChoiceArrow__Infer _.
