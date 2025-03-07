@@ -18,6 +18,18 @@ data Router x a b z where
   FstIdRouter :: Router (a, c) a b (b, c)
   FstLmapRouter :: (x -> (a, c)) -> Router x a b (b, c)
   
+lmapRouter :: (w -> x) -> Router x a b z -> Router w a b z
+lmapRouter f IdRouter = LmapRouter f
+lmapRouter f (LmapRouter g) = LmapRouter (g . f)
+lmapRouter f FstIdRouter = FstLmapRouter f
+lmapRouter f (FstLmapRouter g) = FstLmapRouter (g . f) 
+
+route :: (Profunctor arr, Arrow arr) =>
+  Router x a b z -> arr a b -> arr x z
+route IdRouter = id
+route (LmapRouter f) = lmap f
+route FstIdRouter = first
+route (FstLmapRouter f) = lmap f . first
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
@@ -56,12 +68,6 @@ assoc ((x, y), z) = (x, (y, z))
 
 unassoc :: (x, (y, z)) -> ((x, y), z)
 unassoc (x, (y, z)) = ((x, y), z)
-
-lmapRouter :: (w -> x) -> Router x a b z -> Router w a b z
-lmapRouter f IdRouter = LmapRouter f
-lmapRouter f (LmapRouter g) = LmapRouter (g . f)
-lmapRouter f FstIdRouter = FstLmapRouter f
-lmapRouter f (FstLmapRouter g) = FstLmapRouter (g . f) 
 
 
 -- |- Freer arrows are profunctors.
@@ -103,13 +109,10 @@ instance Category (FreerArrow e) where
   f . (Hom g) = lmap g f
   f . (Comp f' x y) = Comp f' x (f . y)
 {-- end Category_FreerArrow --}
-  
+
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
 interp :: (Profunctor arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom f) = arr f
-interp handler (Comp IdRouter x y) = handler x >>> interp handler y
-interp handler (Comp (LmapRouter f) x y) = lmap f (handler x) >>> interp handler y
-interp handler (Comp FstIdRouter x y) = first (handler x) >>> interp handler y
-interp handler (Comp (FstLmapRouter f) x y) = lmap f (first (handler x)) >>> interp handler y
+interp handler (Comp f x y) = route f (handler x) >>> interp handler y
