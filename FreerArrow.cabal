@@ -33,6 +33,7 @@ library
       Control.Arrow.Freer.FreerArrowB
       Control.Arrow.Freer.FreerArrowFinal
       Control.Arrow.Freer.FreerArrowOps
+      Control.Arrow.Freer.FreerArrowRouter
       Control.Arrow.Freer.FreerArrowSimple
       Control.Arrow.Freer.FreerChoiceArrow
       Control.Arrow.Freer.FreerChoiceArrowB
