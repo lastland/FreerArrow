@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE RankNTypes  #-}
 
 module Control.Arrow.Freer.FreerArrowFinal where
@@ -9,8 +10,7 @@ import Prelude hiding (id, (.))
 
 newtype FreerArrow e a b = FreerArrow {
   runFreer :: forall ar. (Strong ar, Arrow ar) =>
-              (forall x y. e x y -> ar x y) ->
-              ar a b }
+              (e :-> ar) -> ar a b }
 
 embed :: e a b -> FreerArrow e a b
 embed e = FreerArrow ($ e)

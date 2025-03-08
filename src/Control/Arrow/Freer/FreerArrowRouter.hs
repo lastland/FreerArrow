@@ -60,6 +60,12 @@ instance Strong (FreerArrow e) where
     lmap (first f) $ first' (Comp r a b)
   first' (Comp r a b) =
     Comp (FstRouter r) a (first' b)
+
+  second' (Hom f) = Hom $ B.second f
+  second' (Comp (LmapRouter f r) a b) =
+    lmap (second f) $ second' (Comp r a b)
+  second' (Comp r a b) =
+    Comp (SndRouter r) a (second' b)
 {-- end Strong_FreerArrow --}
 
 {-- begin Arrow_FreerArrow --}
@@ -67,6 +73,7 @@ instance Strong (FreerArrow e) where
 instance Arrow (FreerArrow e) where
   arr = Hom
   first = first'
+  second = second'
 {-- end Arrow_FreerArrow --}
 
 instance Choice (FreerArrow e) where
@@ -75,6 +82,12 @@ instance Choice (FreerArrow e) where
     lmap (left f) $ left' (Comp r a b)
   left' (Comp r a b) =
     Comp (LeftRouter r) a (left' b)
+
+  right' (Hom f) = Hom $ B.second f
+  right' (Comp (LmapRouter f r) a b) =
+    lmap (right f) $ right' (Comp r a b)
+  right' (Comp r a b) =
+    Comp (RightRouter r) a (right' b)
 
 instance ArrowChoice (FreerArrow e) where
   left = left'
