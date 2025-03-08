@@ -63,7 +63,6 @@ instance Profunctor (FreerArrow e) where
   lmap f (Comp r x y) = Comp (contramap f r) x y
 
 {-- begin Strong_FreerArrow --}
--- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ B.first f
   first' (Comp IdRouter a b) =
@@ -82,7 +81,6 @@ instance Arrow (FreerArrow e) where
   arr = Hom
   first = first'
 {-- end Arrow_FreerArrow --}
-
 
 {-- begin Category_FreerArrow --}
 -- |- Freer arrows are categories.

@@ -9,6 +9,7 @@ import qualified Control.Monad.Freer.FreerMonadFinal  as F
 import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
 import qualified Control.Arrow.Freer.FreerArrowSimple as AS
 import qualified Control.Arrow.Freer.FreerArrowOps    as AO
+import qualified Control.Arrow.Freer.FreerArrowRouter as AR
 import           Control.Arrow
 import           Control.Arrow.State.ArrowState
 import           Control.Arrow.State.AState
@@ -41,6 +42,10 @@ incNAO :: Int -> AO.FreerArrowOps (StateEff Int) Int Int
 incNAO n | n > 0     = get >>> lmap (+1) put >>> incNAO (n - 1)
          | otherwise = get
 
+incNAR :: Int -> AR.FreerArrow (StateEff Int) Int Int
+incNAR n | n > 0     = get >>> lmap (+1) put >>> incNAR (n - 1)
+         | otherwise = get
+
 incNM :: Int -> M.FreerMonad (StateEff1 Int) Int
 incNM n | n > 0     = ((+1) :: Int -> Int) <$> S.get >>= S.put >> incNM (n - 1)
         | otherwise = S.get 
@@ -60,6 +65,9 @@ compileAS = AS.interp handleState (incNAS num)
 
 compileAO :: AState Int Int Int
 compileAO = AO.interp handleState (incNAO num)
+
+compileAR :: AState Int Int Int
+compileAR = AR.interp handleState (incNAR num)
 
 interpAConcurrently :: (Profunctor arr, Arrow arr) =>
                        (forall a b. e a b -> arr a b) ->
@@ -109,6 +117,8 @@ main = defaultMain [
                      , bench "AF from 1"  $ nf (runA 1) compileAF
                      , bench "AO from 0"  $ nf (runA 0) compileAO
                      , bench "AO from 1"  $ nf (runA 1) compileAO
+                     , bench "AR from 0"  $ nf (runA 0) compileAR
+                     , bench "AR from 1"  $ nf (runA 1) compileAR
                      , bench "M from 0"   $ nf (runM 0) compileM
                      , bench "M from 1"   $ nf (runM 0) compileM
                      , bench "MF from 0"  $ nf (runM 0) compileF
@@ -118,6 +128,7 @@ main = defaultMain [
                      , bench "AS"  $ nf runA5 compileAS
                      , bench "AF"  $ nf runA5 compileAF
                      , bench "AO"  $ nf runA5 compileAO
+                     , bench "AR"  $ nf runA5 compileAR
                      , bench "M"   $ nf runM5 compileM
                      , bench "MF"  $ nf runM5 compileF
                      ],

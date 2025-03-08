@@ -6,7 +6,7 @@
 -- |- This is a version of [MonadState] with no functional dependency.
 module Control.Monad.State.MonadState where
 
-import qualified Control.Monad.State                 as S
+
 import qualified Control.Monad.Freer.FreerMonad      as M
 import qualified Control.Monad.Freer.FreerMonadFinal as F
 
