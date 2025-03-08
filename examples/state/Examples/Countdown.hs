@@ -38,40 +38,40 @@ countME :: Elgot1 M.FreerMonad (StateEff1 Int) Int Int
 countME = Elgot1 (\_ -> do
                       n <- S.get
                       if n == 0 then return $ Left n
-                      else (S.put (n - 1) >> (return $ Right (n - 1)))) return
+                      else S.put (n - 1) >> return (Right (n - 1))) return
 
 countMFE :: Elgot1 F.FreerMonad (StateEff1 Int) Int Int
 countMFE = Elgot1 (\_ -> do
                       n <- S.get
                       if n == 0 then return $ Left n
-                      else (S.put (n - 1) >> (return $ Right (n - 1)))) return 
+                      else S.put (n - 1) >> return (Right (n - 1))) return 
   
 
 countA :: Elgot AC.FreerChoiceArrow (StateEff Int) Int Int
 countA =
   let go :: AC.FreerChoiceArrow (StateEff Int) Int (Either Int Int)
-      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
-            (right $ lmap (\x -> x - 1) put) in
+      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
+            right (lmap (\x -> x - 1) put) in
     Elgot go id
 
 countAR :: Elgot AR.FreerArrow (StateEff Int) Int Int
 countAR =
   let go :: AR.FreerArrow (StateEff Int) Int (Either Int Int)
-      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
-            (right $ lmap (\x -> x - 1) put) in
+      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
+            right (lmap (\x -> x - 1) put) in
     Elgot go id
 
 countAO :: Elgot AO.FreerArrowOps (StateEff Int) Int Int
 countAO =
   let go :: AO.FreerArrowOps (StateEff Int) Int (Either Int Int)
-      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
             (id +++ lmap (\x -> x - 1) put) in
     Elgot go id
 
 countAO' :: ElgotC (AState Int) Int Int
 countAO' =
   let body :: AO.FreerArrowOps (StateEff Int) Int (Either Int Int)
-      body = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+      body = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
              (id +++ lmap (\x -> x - 1) put) in
   let go :: AState Int Int (Either Int Int)
       !go = AO.interp handleState body in
@@ -81,8 +81,8 @@ countAO' =
 countAEF :: EF.Elgot AC.FreerChoiceArrow (StateEff Int) Int Int
 countAEF =
   let go :: AC.FreerChoiceArrow (StateEff Int) Int (Either Int Int)
-      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
-            (right $ lmap (\x -> x - 1) put) in
+      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
+            right (lmap (\x -> x - 1) put) in
     EF.elgot go id
 
 compileA :: AState Int Int Int
