@@ -9,8 +9,10 @@ import Data.Functor.Contravariant
 -- in Rocq Prover.
 data Router x a b y where
   IdRouter :: Router x x y y
-  FstRouter :: Router (a, c) a b (b, c) 
-  AllRouter :: Router (Either (a, c) w) a b (Either (b, c) w)
+  FstRouter :: Router (a, c) a b (b, c)
+  LeftRouter :: Router (Either a c) a b (Either b c)
+  LeftFstRouter :: Router (Either (a, c) w) a b (Either (b, c) w)
+  FstLeftRouter :: Router (Either a c, w) a b (Either b c, w)
   LmapRouter :: (w -> x) -> Router x a b y -> Router w a b y
 
 cmapRouter :: (w -> x) -> Router x a b y -> Router w a b y
@@ -20,7 +22,9 @@ cmapRouter f r = LmapRouter f r
 route :: (Strong p, Choice p) => Router x a b y -> p a b -> p x y
 route IdRouter = id
 route FstRouter = first'
-route AllRouter = left' . first'
+route LeftRouter = left'
+route LeftFstRouter = left' . first'
+route FstLeftRouter = first' . left'
 route (LmapRouter f r) = lmap f . route r
 
 newtype ContraRouter a b y x = ContraRouter (Router x a b y) 

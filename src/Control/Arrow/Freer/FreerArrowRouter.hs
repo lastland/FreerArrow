@@ -67,7 +67,17 @@ assocsumprod (Right c, d)     = Right (c, d)
 
 unassocsumprod :: Either (a, (b, d)) (c, d) -> (Either (a, b) c, d)
 unassocsumprod (Left (a, (b, d))) = (Left (a, b), d)
-unassocsumprod (Right (c, d))     = (Right c, d) 
+unassocsumprod (Right (c, d))     = (Right c, d)
+
+assocprodsum :: Either (Either a c, w) v -> Either (a, w) (Either (c, w) v)
+assocprodsum (Left (Left a, w)) = Left (a, w)
+assocprodsum (Left (Right c, w)) = Right (Left (c, w))
+assocprodsum (Right v) = Right (Right v)
+
+unassocprodsum :: Either (a, w) (Either (c, w) v) -> Either (Either a c, w) v
+unassocprodsum (Left (a, w)) = Left (Left a, w)
+unassocprodsum (Right (Left (c, w))) = Left (Right c, w)
+unassocprodsum (Right (Right v)) = Right v
 
 assocsum :: Either (Either a b) c -> Either a (Either b c)
 assocsum (Left (Left a)) = Left a
@@ -86,8 +96,12 @@ instance Strong (FreerArrow e) where
     Comp FstRouter a (first' b)
   first' (Comp FstRouter a b) =
     Comp (LmapRouter assoc FstRouter) a (lmap unassoc (first' b))
-  first' (Comp AllRouter a b) =
-    Comp (LmapRouter assocsumprod AllRouter) a (lmap unassocsumprod (first' b))
+  first' (Comp LeftRouter a b) =
+    Comp FstLeftRouter a (first' b)
+  first' (Comp LeftFstRouter a b) =
+    Comp (LmapRouter assocsumprod LeftFstRouter) a (lmap unassocsumprod (first' b))
+  first' (Comp FstLeftRouter a b) =
+    Comp (LmapRouter assoc FstLeftRouter) a (lmap unassoc (first' b))
   first' (Comp (LmapRouter f r) a b) =
     lmap (first f) $ first' (Comp r a b)
 {-- end Strong_FreerArrow --}
@@ -102,11 +116,15 @@ instance Arrow (FreerArrow e) where
 instance Choice (FreerArrow e) where
   left' (Hom f) = Hom $ B.first f
   left' (Comp IdRouter a b) =
-    Comp (LmapRouter (B.first (,())) AllRouter) a (lmap (B.first fst) (left' b))
+    Comp LeftRouter a (left' b)
   left' (Comp FstRouter a b) =
-    Comp AllRouter a (left' b)
-  left' (Comp AllRouter a b) =
-    Comp (LmapRouter assocsum AllRouter) a (lmap unassocsum (left' b))
+    Comp LeftFstRouter a (left' b)
+  left' (Comp LeftRouter a b) =
+    Comp (LmapRouter assocsum LeftRouter) a (lmap unassocsum(left' b))
+  left' (Comp LeftFstRouter a b) =
+    Comp (LmapRouter assocsum LeftFstRouter) a (lmap unassocsum (left' b))
+  left' (Comp FstLeftRouter a b) =
+    Comp (LmapRouter assocprodsum LeftFstRouter) a (lmap unassocprodsum (left' b))
   left' (Comp (LmapRouter f r) a b) =
     lmap (left f) $ left' (Comp r a b)
 
