@@ -67,9 +67,7 @@ instance Strong (FreerChoiceArrow e) where
 
 {-- begin Choice_FreerChoiceArrow --}
 instance Choice (FreerChoiceArrow e) where
-  left' (Hom f) = Hom $ \case
-    Left x -> Left $ f x
-    Right y -> Right y
+  left' (Hom f) = Hom $ B.first f
   left' (Comp f a b) = Comp f' a (lmap g (left' b))
         where f' (Left x)  = case f x of
                                Left (x', z) -> Left (x', z)

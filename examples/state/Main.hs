@@ -141,6 +141,9 @@ main = defaultMain [
                      , bench "AOC 1000"   $ nf (runAState Count.compileAO' 0) 1000
                      , bench "AOC 10000"  $ nf (runAState Count.compileAO' 0) 10000
                      , bench "AOC 100000" $ nf (runAState Count.compileAO' 0) 100000
+                     , bench "AR 1000"    $ nf (runAState Count.compileAR 0) 1000
+                     , bench "AR 10000"   $ nf (runAState Count.compileAR 0) 10000
+                     , bench "AR 100000"  $ nf (runAState Count.compileAR 0) 100000
                      , bench "M 1000"     $ nf (runState Count.compileM) 1000
                      , bench "M 10000"    $ nf (runState Count.compileM) 10000
                      , bench "M 100000"   $ nf (runState Count.compileM) 100000

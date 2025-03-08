@@ -7,8 +7,8 @@ module Examples.Countdown where
 import qualified Control.Monad.State.MonadState       as S
 import qualified Control.Monad.Freer.FreerMonad       as M
 import qualified Control.Monad.Freer.FreerMonadFinal  as F
-import qualified Control.Arrow.Freer.FreerArrowFinal  as AF
 import qualified Control.Arrow.Freer.FreerChoiceArrow as AC
+import qualified Control.Arrow.Freer.FreerArrowRouter as AR
 import qualified Control.Arrow.Freer.FreerArrowOps    as AO
 import           Control.Arrow.Freer.Elgot
 import qualified Control.Arrow.Freer.ElgotFinal       as EF
@@ -54,6 +54,13 @@ countA =
             (right $ lmap (\x -> x - 1) put) in
     Elgot go id
 
+countAR :: Elgot AR.FreerArrow (StateEff Int) Int Int
+countAR =
+  let go :: AR.FreerArrow (StateEff Int) Int (Either Int Int)
+      !go = get >>> arr (\n -> if n <= 0 then Left n else Right n) >>>
+            (right $ lmap (\x -> x - 1) put) in
+    Elgot go id
+
 countAO :: Elgot AO.FreerArrowOps (StateEff Int) Int Int
 countAO =
   let go :: AO.FreerArrowOps (StateEff Int) Int (Either Int Int)
@@ -80,6 +87,9 @@ countAEF =
 
 compileA :: AState Int Int Int
 compileA = interp (AC.interp handleState) countA
+
+compileAR :: AState Int Int Int
+compileAR = interp (AR.interp handleState) countAR
 
 compileAO :: AState Int Int Int
 compileAO = interp (AO.interp handleState) countAO

@@ -1,3 +1,4 @@
+{-# LANGUAGE TupleSections         #-}
 {-# LANGUAGE TypeOperators         #-}
 {-# LANGUAGE GADTs                 #-}
 {-# LANGUAGE KindSignatures        #-}
@@ -9,7 +10,6 @@ module Control.Arrow.Freer.FreerArrowRouter where
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
-import Data.Functor.Contravariant
 import Prelude hiding (id, (.))
 import Control.Arrow.Freer.Router
 import qualified Data.Bifunctor as B
@@ -19,7 +19,7 @@ import qualified Data.Bifunctor as B
 {-- begin FreerArrow --}
 data FreerArrow e x y where
   Hom :: (x -> y) -> FreerArrow e x y
-  Comp :: Router a b z x -> e a b ->
+  Comp :: Router x a b z -> e a b ->
           FreerArrow e z y -> FreerArrow e x y
 {-- end FreerArrow --}
 
@@ -44,35 +44,52 @@ data ReifiedArrow e x y where
 embed :: e x y -> FreerArrow e x y
 embed f = Comp IdRouter f id
 
--- ((x, y), z), (x, (y, z)), and (x, y, z) are all different in Haskell, unlike
--- in Rocq Prover.
+
+-- |- Freer arrows are profunctors.
+instance Profunctor (FreerArrow e) where
+  dimap f g (Hom h) = Hom (g . h . f)
+  dimap f g (Comp r x y) = Comp (cmapRouter f r) x (dimap id g y)
+
+  -- lmap can be implemented more efficiently without recursion
+  lmap f (Hom h) = Hom (h . f)
+  lmap f (Comp r x y) = Comp (cmapRouter f r) x y
+
+
 assoc :: ((x, y), z) -> (x, (y, z))
 assoc ((x, y), z) = (x, (y, z))
 
 unassoc :: (x, (y, z)) -> ((x, y), z)
 unassoc (x, (y, z)) = ((x, y), z)
 
+assocsumprod :: (Either (a, b) c, d) -> Either (a, (b, d)) (c, d)
+assocsumprod (Left (a, b), d) = Left (a, (b, d))
+assocsumprod (Right c, d)     = Right (c, d)
 
--- |- Freer arrows are profunctors.
-instance Profunctor (FreerArrow e) where
-  dimap f g (Hom h) = Hom (g . h . f)
-  dimap f g (Comp r x y) = Comp (contramap f r) x (dimap id g y)
+unassocsumprod :: Either (a, (b, d)) (c, d) -> (Either (a, b) c, d)
+unassocsumprod (Left (a, (b, d))) = (Left (a, b), d)
+unassocsumprod (Right (c, d))     = (Right c, d) 
 
-  -- lmap can be implemented more efficiently without recursion
-  lmap f (Hom h) = Hom (h . f)
-  lmap f (Comp r x y) = Comp (contramap f r) x y
+assocsum :: Either (Either a b) c -> Either a (Either b c)
+assocsum (Left (Left a)) = Left a
+assocsum (Left (Right b)) = Right (Left b)
+assocsum (Right c) = Right (Right c)
+
+unassocsum :: Either a (Either b c) -> Either (Either a b) c
+unassocsum (Left a) = Left (Left a)
+unassocsum (Right (Left b)) = Left (Right b)
+unassocsum (Right (Right c)) = Right c
 
 {-- begin Strong_FreerArrow --}
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ B.first f
   first' (Comp IdRouter a b) =
-    Comp FstIdRouter a (first' b)
-  first' (Comp (LmapRouter f) a b) =
-    Comp (FstLmapRouter (B.first f)) a (first' b)
-  first' (Comp FstIdRouter a b) =
-    Comp (FstLmapRouter assoc) a (lmap unassoc (first' b))
-  first' (Comp (FstLmapRouter f) a b) =
-    Comp (FstLmapRouter (assoc . B.first f)) a (lmap unassoc (first' b))
+    Comp FstRouter a (first' b)
+  first' (Comp FstRouter a b) =
+    Comp (LmapRouter assoc FstRouter) a (lmap unassoc (first' b))
+  first' (Comp AllRouter a b) =
+    Comp (LmapRouter assocsumprod AllRouter) a (lmap unassocsumprod (first' b))
+  first' (Comp (LmapRouter f r) a b) =
+    lmap (first f) $ first' (Comp r a b)
 {-- end Strong_FreerArrow --}
 
 {-- begin Arrow_FreerArrow --}
@@ -81,6 +98,20 @@ instance Arrow (FreerArrow e) where
   arr = Hom
   first = first'
 {-- end Arrow_FreerArrow --}
+
+instance Choice (FreerArrow e) where
+  left' (Hom f) = Hom $ B.first f
+  left' (Comp IdRouter a b) =
+    Comp (LmapRouter (B.first (,())) AllRouter) a (lmap (B.first fst) (left' b))
+  left' (Comp FstRouter a b) =
+    Comp AllRouter a (left' b)
+  left' (Comp AllRouter a b) =
+    Comp (LmapRouter assocsum AllRouter) a (lmap unassocsum (left' b))
+  left' (Comp (LmapRouter f r) a b) =
+    lmap (left f) $ left' (Comp r a b)
+
+instance ArrowChoice (FreerArrow e) where
+  left = left'
 
 {-- begin Category_FreerArrow --}
 -- |- Freer arrows are categories.
@@ -93,7 +124,7 @@ instance Category (FreerArrow e) where
 
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
-interp :: (Profunctor arr, Strong arr, Arrow arr) =>
+interp :: (Strong arr, Choice arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f x y) = route f (handler x) >>> interp handler y
