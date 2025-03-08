@@ -22,9 +22,11 @@ instance Arrow (AState s) where
   arr f = AState $ \a s -> (f a, s)
 
   first = first'
+  second = second'
 
 instance ArrowChoice (AState s) where
   left = left'
+  right = right'
 
   (AState f) +++ (AState g) =
     AState $ \x s ->
@@ -52,10 +54,16 @@ instance Profunctor (AState s) where
     let (b, s') = h (f a) s in (b, s')
     
 instance Strong (AState s) where
-  first' (AState f) = AState $ \(a, c) s -> let (b, s') = f a s in ((b, c), s')
+  first'  (AState f) = AState $ \(a, c) s -> let (b, s') = f a s in ((b, c), s')
+  second' (AState f) = AState $ \(c, a) s -> let (b, s') = f a s in ((c, b), s')
   
 instance Choice (AState s) where
   left' (AState f) = AState $ \x s ->
     case x of
       Left  a -> let (x', s') = f a s in (Left x', s')
       Right b -> (Right b, s)
+
+  right' (AState f) = AState $ \x s ->
+    case x of
+      Left  b -> (Left b, s)
+      Right a -> let (x', s') = f a s in (Right x', s')

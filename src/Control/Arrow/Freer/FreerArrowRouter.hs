@@ -54,13 +54,7 @@ instance Profunctor (FreerArrow e) where
   lmap f (Hom h) = Hom (h . f)
   lmap f (Comp r x y) = Comp (cmapRouter f r) x y
 
-
-assoc :: ((x, y), z) -> (x, (y, z))
-assoc ((x, y), z) = (x, (y, z))
-
-unassoc :: (x, (y, z)) -> ((x, y), z)
-unassoc (x, (y, z)) = ((x, y), z)
-
+{--
 assocsumprod :: (Either (a, b) c, d) -> Either (a, (b, d)) (c, d)
 assocsumprod (Left (a, b), d) = Left (a, (b, d))
 assocsumprod (Right c, d)     = Right (c, d)
@@ -88,22 +82,15 @@ unassocsum :: Either a (Either b c) -> Either (Either a b) c
 unassocsum (Left a) = Left (Left a)
 unassocsum (Right (Left b)) = Left (Right b)
 unassocsum (Right (Right c)) = Right c
+--}
 
 {-- begin Strong_FreerArrow --}
 instance Strong (FreerArrow e) where
   first' (Hom f) = Hom $ B.first f
-  first' (Comp IdRouter a b) =
-    Comp FstRouter a (first' b)
-  first' (Comp FstRouter a b) =
-    Comp (LmapRouter assoc FstRouter) a (lmap unassoc (first' b))
-  first' (Comp LeftRouter a b) =
-    Comp FstLeftRouter a (first' b)
-  first' (Comp LeftFstRouter a b) =
-    Comp (LmapRouter assocsumprod LeftFstRouter) a (lmap unassocsumprod (first' b))
-  first' (Comp FstLeftRouter a b) =
-    Comp (LmapRouter assoc FstLeftRouter) a (lmap unassoc (first' b))
   first' (Comp (LmapRouter f r) a b) =
     lmap (first f) $ first' (Comp r a b)
+  first' (Comp r a b) =
+    Comp (FstRouter r) a (first' b)
 {-- end Strong_FreerArrow --}
 
 {-- begin Arrow_FreerArrow --}
@@ -115,18 +102,10 @@ instance Arrow (FreerArrow e) where
 
 instance Choice (FreerArrow e) where
   left' (Hom f) = Hom $ B.first f
-  left' (Comp IdRouter a b) =
-    Comp LeftRouter a (left' b)
-  left' (Comp FstRouter a b) =
-    Comp LeftFstRouter a (left' b)
-  left' (Comp LeftRouter a b) =
-    Comp (LmapRouter assocsum LeftRouter) a (lmap unassocsum(left' b))
-  left' (Comp LeftFstRouter a b) =
-    Comp (LmapRouter assocsum LeftFstRouter) a (lmap unassocsum (left' b))
-  left' (Comp FstLeftRouter a b) =
-    Comp (LmapRouter assocprodsum LeftFstRouter) a (lmap unassocprodsum (left' b))
   left' (Comp (LmapRouter f r) a b) =
     lmap (left f) $ left' (Comp r a b)
+  left' (Comp r a b) =
+    Comp (LeftRouter r) a (left' b)
 
 instance ArrowChoice (FreerArrow e) where
   left = left'
