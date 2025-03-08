@@ -61,6 +61,13 @@ countAR =
             right (lmap (\x -> x - 1) put) in
     Elgot go id
 
+countARF :: EF.Elgot AR.FreerArrow (StateEff Int) Int Int
+countARF =
+  let go :: AR.FreerArrow (StateEff Int) Int (Either Int Int)
+      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
+            right (lmap (\x -> x - 1) put) in
+    EF.elgot go id
+
 countAO :: Elgot AO.FreerArrowOps (StateEff Int) Int Int
 countAO =
   let go :: AO.FreerArrowOps (StateEff Int) Int (Either Int Int)
@@ -99,6 +106,9 @@ compileAO' = interpC countAO'
 
 compileAEF :: AState Int Int Int
 compileAEF = EF.runElgot countAEF (AC.interp handleState)
+
+compileARF :: AState Int Int Int
+compileARF = EF.runElgot countARF (AR.interp handleState)
 
 compileM :: State Int Int
 compileM = M.interp handleState1 countM

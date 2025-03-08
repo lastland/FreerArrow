@@ -38,6 +38,7 @@ library
       Control.Arrow.Freer.FreerChoiceArrow
       Control.Arrow.Freer.FreerChoiceArrowB
       Control.Arrow.Freer.FreerPreArrow
+      Control.Arrow.Freer.Internal
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Router
       Control.Arrow.Freer.Sum2

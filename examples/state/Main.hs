@@ -144,12 +144,21 @@ main = defaultMain [
                      , bench "AR 1000"    $ nf (runAState Count.compileAR 0) 1000
                      , bench "AR 10000"   $ nf (runAState Count.compileAR 0) 10000
                      , bench "AR 100000"  $ nf (runAState Count.compileAR 0) 100000
+                     , bench "ARF 1000"    $ nf (runAState Count.compileARF 0) 1000
+                     , bench "ARF 10000"   $ nf (runAState Count.compileARF 0) 10000
+                     , bench "ARF 100000"  $ nf (runAState Count.compileARF 0) 100000
                      , bench "M 1000"     $ nf (runState Count.compileM) 1000
                      , bench "M 10000"    $ nf (runState Count.compileM) 10000
                      , bench "M 100000"   $ nf (runState Count.compileM) 100000
                      , bench "F 1000"     $ nf (runState Count.compileMF) 1000
                      , bench "F 10000"    $ nf (runState Count.compileMF) 10000
                      , bench "F 100000"   $ nf (runState Count.compileMF) 100000
+                     , bench "ME 1000"     $ nf (runState Count.compileME) 1000
+                     , bench "ME 10000"    $ nf (runState Count.compileME) 10000
+                     , bench "ME 100000"   $ nf (runState Count.compileME) 100000
+                     , bench "FE 1000"     $ nf (runState Count.compileMFE) 1000
+                     , bench "FE 10000"    $ nf (runState Count.compileMFE) 10000
+                     , bench "FE 100000"   $ nf (runState Count.compileMFE) 100000
                      ]
   ]
 
