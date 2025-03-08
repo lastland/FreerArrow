@@ -9,6 +9,7 @@ module Control.Arrow.Freer.FreerArrowRouter where
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
+import Data.Functor.Contravariant
 import Prelude hiding (id, (.))
 import Control.Arrow.Freer.Router
 import qualified Data.Bifunctor as B
@@ -18,7 +19,7 @@ import qualified Data.Bifunctor as B
 {-- begin FreerArrow --}
 data FreerArrow e x y where
   Hom :: (x -> y) -> FreerArrow e x y
-  Comp :: Router x a b z -> e a b ->
+  Comp :: Router a b z x -> e a b ->
           FreerArrow e z y -> FreerArrow e x y
 {-- end FreerArrow --}
 
@@ -55,11 +56,11 @@ unassoc (x, (y, z)) = ((x, y), z)
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where
   dimap f g (Hom h) = Hom (g . h . f)
-  dimap f g (Comp r x y) = Comp (lmapRouter f r) x (dimap id g y)
+  dimap f g (Comp r x y) = Comp (contramap f r) x (dimap id g y)
 
   -- lmap can be implemented more efficiently without recursion
   lmap f (Hom h) = Hom (h . f)
-  lmap f (Comp r x y) = Comp (lmapRouter f r) x y
+  lmap f (Comp r x y) = Comp (contramap f r) x y
 
 {-- begin Strong_FreerArrow --}
 -- |- Freer arrows are strong profunctors.
@@ -94,7 +95,7 @@ instance Category (FreerArrow e) where
 
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
-interp :: (Profunctor arr, Arrow arr) =>
+interp :: (Profunctor arr, Strong arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f x y) = route f (handler x) >>> interp handler y

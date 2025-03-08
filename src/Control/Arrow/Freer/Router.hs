@@ -1,25 +1,24 @@
 {-# LANGUAGE GADTs                 #-}
+
 module Control.Arrow.Freer.Router where
 
 import Data.Profunctor
-import Control.Arrow
+import Data.Functor.Contravariant
 
-data Router x a b z where
-  IdRouter :: Router x x z z
-  LmapRouter :: (x -> a) -> Router x a z z
-  FstIdRouter :: Router (a, c) a b (b, c)
-  FstLmapRouter :: (x -> (a, c)) -> Router x a b (b, c)
-  
-lmapRouter :: (w -> x) -> Router x a b z -> Router w a b z
-lmapRouter f IdRouter = LmapRouter f
-lmapRouter f (LmapRouter g) = LmapRouter (g . f)
-lmapRouter f FstIdRouter = FstLmapRouter f
-lmapRouter f (FstLmapRouter g) = FstLmapRouter (g . f) 
+data Router a b z x where
+  IdRouter :: Router x z z x
+  LmapRouter :: (x -> a) -> Router a z z x
+  FstIdRouter :: Router a b (b, c) (a, c) 
+  FstLmapRouter :: (x -> (a, c)) -> Router a b (b, c) x
 
-route :: (Profunctor arr, Arrow arr) =>
-  Router x a b z -> arr a b -> arr x z
+instance Contravariant (Router a b z) where
+  contramap f IdRouter = LmapRouter f
+  contramap f (LmapRouter g) = LmapRouter (g . f)
+  contramap f FstIdRouter = FstLmapRouter f
+  contramap f (FstLmapRouter g) = FstLmapRouter (g . f)
+
+route :: Strong p => Router a b z x -> p a b -> p x z
 route IdRouter = id
 route (LmapRouter f) = lmap f
-route FstIdRouter = first
-route (FstLmapRouter f) = lmap f . first
-
+route FstIdRouter = first'
+route (FstLmapRouter f) = lmap f . first'
