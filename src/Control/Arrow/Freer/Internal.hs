@@ -27,3 +27,15 @@ unassocsum :: Either a (Either b c) -> Either (Either a b) c
 unassocsum (Left a) = Left (Left a)
 unassocsum (Right (Left b)) = Left (Right b)
 unassocsum (Right (Right c)) = Right c
+
+assoc :: ((x, y), z) -> (x, (y, z))
+assoc ((x, y), z) = (x, (y, z))
+
+unassoc ::  (x, (y, z)) -> ((x, y), z)
+unassoc (x, (y, z)) = ((x, y), z)
+
+swap :: (x, y) -> (y, x)
+swap (x, y) = (y, x)
+
+dup :: x -> (x, x)
+dup x = (x, x)

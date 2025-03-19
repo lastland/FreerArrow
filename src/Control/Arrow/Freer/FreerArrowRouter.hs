@@ -11,13 +11,12 @@ import Control.Arrow
 import Data.Profunctor
 import Prelude hiding (id, (.))
 import Control.Arrow.Freer.Router
-import qualified Data.Bifunctor as B
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
 {-- begin FreerArrow --}
 data FreerArrow e x y where
-  Hom :: (x -> y) -> FreerArrow e x y
+  HomR :: Router x a a y -> FreerArrow e x y
   Comp :: Router x a b z -> e a b ->
           FreerArrow e z y -> FreerArrow e x y
 {-- end FreerArrow --}
@@ -26,7 +25,7 @@ data FreerArrow e x y where
 -- illustrates that some static analysis can be performed on freer arrows. Even
 -- if the effect can be stateful, we do not need to provide an initial state.
 count :: FreerArrow e x y -> Int
-count (Hom _) = 0
+count (HomR _) = 0
 count (Comp _ _ y) = 1 + count y
 
 -- The following is what I call a reified arrow. It is free if we define an
@@ -46,44 +45,46 @@ embed f = Comp IdRouter f id
 
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where
-  dimap f g (Hom h) = Hom (g . h . f)
+  dimap f g (HomR h) = HomR $ LmapRouter (g . route h id . f) IdRouter
   dimap f g (Comp r x y) = Comp (cmapRouter f r) x (dimap id g y)
 
   -- lmap can be implemented more efficiently without recursion
-  lmap f (Hom h) = Hom (h . f)
+  lmap f (HomR h) = HomR (cmapRouter f h)
   lmap f (Comp r x y) = Comp (cmapRouter f r) x y
 
 {-- begin Strong_FreerArrow --}
 instance Strong (FreerArrow e) where
-  first' (Hom f) = Hom $ B.first f
+  first' (HomR IdRouter) = HomR IdRouter
+  first' (HomR r) = HomR $ FirstRouter r
   first' (Comp (LmapRouter f r) a b) =
     lmap (first f) $ first' (Comp r a b)
   first' (Comp r a b) =
-    Comp (FstRouter r) a (first' b)
+    Comp (FirstRouter r) a (first' b)
 
-  second' (Hom f) = Hom $ B.second f
+  second' (HomR IdRouter) = HomR IdRouter
+  second' (HomR r) = HomR $ SecondRouter r
   second' (Comp (LmapRouter f r) a b) =
     lmap (second f) $ second' (Comp r a b)
   second' (Comp r a b) =
-    Comp (SndRouter r) a (second' b)
+    Comp (SecondRouter r) a (second' b)
 {-- end Strong_FreerArrow --}
 
 {-- begin Arrow_FreerArrow --}
 -- |- Freer arrows are arrows.
 instance Arrow (FreerArrow e) where
-  arr = Hom
+  arr f = HomR $ LmapRouter f IdRouter
   first = first'
   second = second'
 {-- end Arrow_FreerArrow --}
 
 instance Choice (FreerArrow e) where
-  left' (Hom f) = Hom $ B.first f
+  left' (HomR r) = HomR $ LeftRouter r 
   left' (Comp (LmapRouter f r) a b) =
     lmap (left f) $ left' (Comp r a b)
   left' (Comp r a b) =
     Comp (LeftRouter r) a (left' b)
 
-  right' (Hom f) = Hom $ B.second f
+  right' (HomR r) = HomR $ RightRouter r 
   right' (Comp (LmapRouter f r) a b) =
     lmap (right f) $ right' (Comp r a b)
   right' (Comp r a b) =
@@ -95,9 +96,9 @@ instance ArrowChoice (FreerArrow e) where
 {-- begin Category_FreerArrow --}
 -- |- Freer arrows are categories.
 instance Category (FreerArrow e) where
-  id = Hom id
+  id = HomR IdRouter
 
-  f . (Hom g) = lmap g f
+--  f . (HomR r) = HomR $ compRouter r f
   f . (Comp f' x y) = Comp f' x (f . y)
 {-- end Category_FreerArrow --}
 
@@ -105,5 +106,5 @@ instance Category (FreerArrow e) where
 -- an effect handler.
 interp :: (Strong arr, Choice arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
-interp _       (Hom f) = arr f
+interp _       (HomR r) = route r id
 interp handler (Comp f x y) = route f (handler x) >>> interp handler y
