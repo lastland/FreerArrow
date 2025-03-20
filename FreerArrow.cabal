@@ -42,6 +42,7 @@ library
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Router
       Control.Arrow.Freer.Sum2
+      Control.Arrow.Routed.Classes
       Control.Arrow.State.ArrowState
       Control.Arrow.State.AState
       Control.Monad.Freer.FreerMonad
