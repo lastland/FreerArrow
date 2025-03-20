@@ -4,68 +4,88 @@ module Control.Arrow.Freer.Router where
 
 import Data.Profunctor
 import Data.Functor.Contravariant
-import Control.Arrow.Freer.Internal 
+import Control.Arrow.Freer.Internal
 
-data Router x a b y where
-  IdRouter :: Router x x y y
+data Router i o where
+  IdRoute :: Router a a
+  -- Tree rotations
+  LeftRot :: Router (a, (b, c)) ((a, b), c)
+  RightRot :: Router ((a, b), c) (a, (b, c))
+  -- Subtree deletions
+  -- DelRout :: Router i N
+  FstRoute :: Router (a, b) a
+  SndRoute :: Router (a, b) b
+  -- Leaves duplications
+  DupRoute :: Router a (a, a)
+  -- Swapping leaves
+  SwapRoute :: Router (a, b) (b, a)
+  -- Combining routers
+  AppFirst :: Router a b -> Router (a, c) (b, c)
+  AppSecond :: Router c d -> Router (a, c) (a, d)
+  AppLeft :: Router a b -> Router (Either a c) (Either b c)
+  AppRight :: Router c d -> Router (Either a c) (Either a d)
+  CompRoute :: Router a b -> Router b c -> Router a c
+  -- Functions
+  FunRoute :: (a -> b) -> Router a b
 
-  FirstRouter :: Router x a b y -> Router (x, c) a b (y, c)
-  SecondRouter :: Router x a b y -> Router (c, x) a b (c, y)
+instance Profunctor Router where
+  lmap f (FunRoute g) = FunRoute (g . f)
+  lmap f r = CompRoute (FunRoute f) r
+
+  rmap f (FunRoute g) = FunRoute (f . g)
+  rmap f (CompRoute r1 r2) = CompRoute r1 (rmap f r2)
+  rmap f r = CompRoute r (FunRoute f)
+
+  dimap f g r = lmap f (rmap g r)
+
+data Bridge x a b y where
+  IdBridge :: Bridge x x y y
+
+  FirstBridge :: Bridge x a b y -> Bridge (x, c) a b (y, c)
+  SecondBridge :: Bridge x a b y -> Bridge (c, x) a b (c, y)
   
-  LeftRouter  :: Router x a b y -> Router (Either x c) a b (Either y c)
-  RightRouter :: Router x a b y -> Router (Either c x) a b (Either c y)
+  LeftBridge  :: Bridge x a b y -> Bridge (Either x c) a b (Either y c)
+  RightBridge :: Bridge x a b y -> Bridge (Either c x) a b (Either c y)
 
-  SwapRouter :: Router (x, y) a b c -> Router (y, x) a b c
+  LRouterBridge :: Router w x -> Bridge x a b y -> Bridge w a b y
+  LmapBridge :: (w -> x) -> Bridge x a b y -> Bridge w a b y
 
-  LeftRotRouter :: Router ((x, y), z) a b c -> Router (x, (y, z)) a b c 
-  RightRotRouter  :: Router (x, (y, z)) a b c -> Router ((x, y), z) a b c
+cmapBridge :: (w -> x) -> Bridge x a b y -> Bridge w a b y
+cmapBridge f (LmapBridge g r) = LmapBridge (g . f) r
+cmapBridge f r = LmapBridge f r
 
-  DupRouter :: Router (x, x) a b c -> Router x a b c
+cmapRouterBridge :: Router w x -> Bridge x a b y -> Bridge w a b y
+cmapRouterBridge f (LmapBridge g r) = LmapBridge (g . route f) r
+cmapRouterBridge f (LRouterBridge g r) = LRouterBridge (CompRoute f g) r
+cmapRouterBridge f r = LRouterBridge f r
 
-  LmapRouter :: (w -> x) -> Router x a b y -> Router w a b y
+route :: Router x y -> x -> y
+route IdRoute = id
+route LeftRot  = unassoc
+route RightRot = assoc
+route FstRoute = fst
+route SndRoute = snd
+route DupRoute = dup
+route SwapRoute = swap
+route (AppFirst r) = first' (route r) 
+route (AppSecond r) = second' (route r)
+route (AppLeft r) = left' (route r) 
+route (AppRight r) = right' (route r)
+route (CompRoute r1 r2) = route r2 . route r1
+route (FunRoute f) = f
 
-cmapRouter :: (w -> x) -> Router x a b y -> Router w a b y
-cmapRouter f (LmapRouter g r) = LmapRouter (g . f) r
-cmapRouter f r = LmapRouter f r
-
-
--- first swap :: ((x, y), z) -> ((y, x), z)
--- second :: ((y, x), z) -> ((y, x), a)
-
--- ((x, y), z) -> ((y, x), a)
-
--- e z a :: IdRouter
--- (w, z) -> (w, a) :: SecondRouter IdRouter
-
--- If the first router is routing an id profunctor
-compRouter :: Router x a a y -> Router y b c z -> Router x b c z
-compRouter IdRouter r = r
-compRouter (FirstRouter r) (FirstRouter r') = FirstRouter (compRouter r r')
-compRouter (SecondRouter r) (SecondRouter r') = SecondRouter (compRouter r r')
-compRouter (LeftRouter r) (LeftRouter r') = LeftRouter (compRouter r r')
-compRouter (RightRouter r) (RightRouter r') = RightRouter (compRouter r r')
-compRouter (SwapRouter r) r' = SwapRouter (compRouter r r')
-compRouter (LeftRotRouter r) r' = LeftRotRouter (compRouter r r')
-compRouter (RightRotRouter r) r' = RightRotRouter (compRouter r r')
-compRouter (DupRouter r) r' = DupRouter (compRouter r r')
-compRouter (LmapRouter f r) r' = LmapRouter f (compRouter r r')
-
-
-route :: (Strong p, Choice p) => Router x a b y -> p a b -> p x y
-route IdRouter = id
-route (FirstRouter r) = first' . route r
-route (SecondRouter r) = second' . route r
-route (LeftRouter r) = left'. route r
-route (RightRouter r) = right'. route r
-route (SwapRouter r) = lmap swap . route r
-route (LeftRotRouter r) = lmap unassoc . route r
-route (RightRotRouter r) = lmap assoc . route r
-route (DupRouter r) = lmap dup . route r
-route (LmapRouter f r) = lmap f . route r
+bridge :: (Strong p, Choice p) => Bridge x a b y -> p a b -> p x y
+bridge IdBridge = id
+bridge (FirstBridge r) = first' . bridge r
+bridge (SecondBridge r) = second' . bridge r
+bridge (LeftBridge r) = left' . bridge r
+bridge (RightBridge r) = right' . bridge r
+bridge (LRouterBridge f r) = lmap (route f) . bridge r
+bridge (LmapBridge f r) = lmap f . bridge r
 
 -- | We don't use this. This is just to show that Router is a contravariant
 -- functor.
-newtype ContraRouter a b y x = ContraRouter (Router x a b y) 
+newtype ContraBridge a b y x = ContraBridge (Bridge x a b y) 
 
-instance Contravariant (ContraRouter a b y) where
-  contramap f (ContraRouter r) = ContraRouter $ cmapRouter f r
+instance Contravariant (ContraBridge a b y) where
+  contramap f (ContraBridge r) = ContraBridge $ cmapBridge f r
