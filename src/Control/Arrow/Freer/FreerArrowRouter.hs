@@ -40,9 +40,11 @@ data ReifiedArrow e x y where
 --}
 
 -- |- Embed an effect in freer arrows.                        
-embed :: e x y -> FreerArrow e x y
+embed :: e x y -> FreerArrow e x (Tainted y)
 embed f = Comp IdBridge f id
 
+clean :: FreerArrow e (Tainted a) a
+clean = Hom CleanRoute 
 
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where

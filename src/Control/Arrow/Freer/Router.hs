@@ -2,9 +2,13 @@
 
 module Control.Arrow.Freer.Router where
 
+
 import Data.Profunctor
 import Data.Functor.Contravariant
 import Control.Arrow.Freer.Internal
+
+newtype Tainted a = Tainted { unTainted :: a }
+  deriving (Eq, Ord, Show)
 
 data Router i o where
   IdRoute :: Router a a
@@ -27,6 +31,8 @@ data Router i o where
   CompRoute :: Router a b -> Router b c -> Router a c
   -- Functions
   FunRoute :: (a -> b) -> Router a b
+  -- For dependency analysis
+  CleanRoute :: Router (Tainted a) a
 
 instance Profunctor Router where
   lmap f (FunRoute g) = FunRoute (g . f)
@@ -39,7 +45,7 @@ instance Profunctor Router where
   dimap f g r = lmap f (rmap g r)
 
 data Bridge x a b y where
-  IdBridge :: Bridge x x y y
+  IdBridge :: Bridge x x y (Tainted y)
 
   FirstBridge :: Bridge x a b y -> Bridge (x, c) a b (y, c)
   SecondBridge :: Bridge x a b y -> Bridge (c, x) a b (c, y)
@@ -73,9 +79,10 @@ route (AppLeft r) = left' (route r)
 route (AppRight r) = right' (route r)
 route (CompRoute r1 r2) = route r2 . route r1
 route (FunRoute f) = f
+route CleanRoute = unTainted
 
 bridge :: (Strong p, Choice p) => Bridge x a b y -> p a b -> p x y
-bridge IdBridge = id
+bridge IdBridge = rmap Tainted
 bridge (FirstBridge r) = first' . bridge r
 bridge (SecondBridge r) = second' . bridge r
 bridge (LeftBridge r) = left' . bridge r

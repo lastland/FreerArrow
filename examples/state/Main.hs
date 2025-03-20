@@ -13,6 +13,7 @@ import qualified Control.Arrow.Freer.FreerArrowRouter as AR
 import           Control.Arrow
 import           Control.Arrow.State.ArrowState
 import           Control.Arrow.State.AState
+import           Control.Arrow.Freer.Router
 import           Control.Arrow.Freer.FreerArrow
 import           Control.Concurrent.Async
 import           Control.Monad.State hiding (get, put)
@@ -42,9 +43,9 @@ incNAO :: Int -> AO.FreerArrowOps (StateEff Int) Int Int
 incNAO n | n > 0     = get >>> lmap (+1) put >>> incNAO (n - 1)
          | otherwise = get
 
-incNAR :: Int -> AR.FreerArrow (StateEff Int) Int Int
-incNAR n | n > 0     = get >>> lmap (+1) put >>> incNAR (n - 1)
-         | otherwise = get
+incNAR :: Int -> AR.FreerArrow (StateEff Int) (Tainted Int) Int
+incNAR n | n > 0     = AR.embed Get >>> AR.clean >>> lmap (+1) (AR.embed Put) >>> incNAR (n - 1)
+         | otherwise = AR.embed Get >>> AR.clean
 
 incNM :: Int -> M.FreerMonad (StateEff1 Int) Int
 incNM n | n > 0     = ((+1) :: Int -> Int) <$> S.get >>= S.put >> incNM (n - 1)
@@ -66,7 +67,7 @@ compileAS = AS.interp handleState (incNAS num)
 compileAO :: AState Int Int Int
 compileAO = AO.interp handleState (incNAO num)
 
-compileAR :: AState Int Int Int
+compileAR :: AState Int (Tainted Int) Int
 compileAR = AR.interp handleState (incNAR num)
 
 interpAConcurrently :: (Profunctor arr, Arrow arr) =>
@@ -90,13 +91,23 @@ compileF = F.runFreer (incNF num) handleState1
 runA :: Int -> AState Int Int Int -> (Int, Int)
 runA n a = runAState a 0 n
 
+runAT :: Int -> AState Int (Tainted Int) Int -> (Int, Int)
+runAT n a = runAState a (Tainted 0) n
+
 runA5 :: AState Int Int Int -> (Int, Int)
 runA5 a = runAState a 0 0 `seq`
           runAState a 0 5 `seq`
           runAState a 0 10 `seq`
           runAState a 0 1000 `seq`
           runAState a 0 500
-  
+
+runA5T :: AState Int (Tainted Int) Int -> (Int, Int)
+runA5T a = runAState a (Tainted 0) 0 `seq`
+           runAState a (Tainted 0) 5 `seq`
+           runAState a (Tainted 0) 10 `seq`
+           runAState a (Tainted 0) 1000 `seq`
+           runAState a (Tainted 0) 500
+
 runM :: Int -> State Int Int -> (Int, Int)
 runM n m = runState m n
 
@@ -117,8 +128,8 @@ main = defaultMain [
                      , bench "AF from 1"  $ nf (runA 1) compileAF
                      , bench "AO from 0"  $ nf (runA 0) compileAO
                      , bench "AO from 1"  $ nf (runA 1) compileAO
-                     , bench "AR from 0"  $ nf (runA 0) compileAR
-                     , bench "AR from 1"  $ nf (runA 1) compileAR
+                     , bench "AR from 0"  $ nf (runAT 0) compileAR
+                     , bench "AR from 1"  $ nf (runAT 1) compileAR
                      , bench "M from 0"   $ nf (runM 0) compileM
                      , bench "M from 1"   $ nf (runM 0) compileM
                      , bench "MF from 0"  $ nf (runM 0) compileF
@@ -128,7 +139,7 @@ main = defaultMain [
                      , bench "AS"  $ nf runA5 compileAS
                      , bench "AF"  $ nf runA5 compileAF
                      , bench "AO"  $ nf runA5 compileAO
-                     , bench "AR"  $ nf runA5 compileAR
+                     , bench "AR"  $ nf runA5T compileAR
                      , bench "M"   $ nf runM5 compileM
                      , bench "MF"  $ nf runM5 compileF
                      ],
@@ -141,12 +152,12 @@ main = defaultMain [
                      , bench "AOC 1000"   $ nf (runAState Count.compileAO' 0) 1000
                      , bench "AOC 10000"  $ nf (runAState Count.compileAO' 0) 10000
                      , bench "AOC 100000" $ nf (runAState Count.compileAO' 0) 100000
-                     , bench "AR 1000"    $ nf (runAState Count.compileAR 0) 1000
-                     , bench "AR 10000"   $ nf (runAState Count.compileAR 0) 10000
-                     , bench "AR 100000"  $ nf (runAState Count.compileAR 0) 100000
-                     , bench "ARF 1000"    $ nf (runAState Count.compileARF 0) 1000
-                     , bench "ARF 10000"   $ nf (runAState Count.compileARF 0) 10000
-                     , bench "ARF 100000"  $ nf (runAState Count.compileARF 0) 100000
+                     , bench "AR 1000"    $ nf (runAState Count.compileAR $ Tainted 0) 1000
+                     , bench "AR 10000"   $ nf (runAState Count.compileAR $ Tainted 0) 10000
+                     , bench "AR 100000"  $ nf (runAState Count.compileAR $ Tainted 0) 100000
+                     , bench "ARF 1000"    $ nf (runAState Count.compileARF $ Tainted 0) 1000
+                     , bench "ARF 10000"   $ nf (runAState Count.compileARF $ Tainted 0) 10000
+                     , bench "ARF 100000"  $ nf (runAState Count.compileARF $ Tainted 0) 100000
                      , bench "M 1000"     $ nf (runState Count.compileM) 1000
                      , bench "M 10000"    $ nf (runState Count.compileM) 10000
                      , bench "M 100000"   $ nf (runState Count.compileM) 100000

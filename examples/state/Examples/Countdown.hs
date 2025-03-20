@@ -14,6 +14,7 @@ import           Control.Arrow.Freer.Elgot
 import qualified Control.Arrow.Freer.ElgotFinal       as EF
 import           Control.Category
 import           Control.Arrow
+import           Control.Arrow.Freer.Router
 import           Control.Arrow.State.ArrowState
 import           Control.Arrow.State.AState
 import           Control.Monad.State hiding (get, put)
@@ -54,18 +55,18 @@ countA =
             right (lmap (\x -> x - 1) put) in
     Elgot go id
 
-countAR :: Elgot AR.FreerArrow (StateEff Int) Int Int
+countAR :: Elgot AR.FreerArrow (StateEff Int) (Tainted Int) Int
 countAR =
-  let go :: AR.FreerArrow (StateEff Int) Int (Either Int Int)
-      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
-            right (lmap (\x -> x - 1) put) in
+  let go :: AR.FreerArrow (StateEff Int) (Tainted Int) (Either Int (Tainted Int))
+      !go = AR.embed Get >>> AR.clean >>> arr (\n -> if n == 0 then Left n else Right n) >>>
+            right (lmap (\x -> x - 1) $ AR.embed Put) in
     Elgot go id
 
-countARF :: EF.Elgot AR.FreerArrow (StateEff Int) Int Int
+countARF :: EF.Elgot AR.FreerArrow (StateEff Int) (Tainted Int) Int
 countARF =
-  let go :: AR.FreerArrow (StateEff Int) Int (Either Int Int)
-      !go = get >>> arr (\n -> if n == 0 then Left n else Right n) >>>
-            right (lmap (\x -> x - 1) put) in
+  let go :: AR.FreerArrow (StateEff Int) (Tainted Int) (Either Int (Tainted Int))
+      !go = AR.embed Get >>> AR.clean >>> arr (\n -> if n == 0 then Left n else Right n) >>>
+            right (lmap (\x -> x - 1) $ AR.embed Put) in
     EF.elgot go id
 
 countAO :: Elgot AO.FreerArrowOps (StateEff Int) Int Int
@@ -95,7 +96,7 @@ countAEF =
 compileA :: AState Int Int Int
 compileA = interp (AC.interp handleState) countA
 
-compileAR :: AState Int Int Int
+compileAR :: AState Int (Tainted Int) Int
 compileAR = interp (AR.interp handleState) countAR
 
 compileAO :: AState Int Int Int
@@ -107,7 +108,7 @@ compileAO' = interpC countAO'
 compileAEF :: AState Int Int Int
 compileAEF = EF.runElgot countAEF (AC.interp handleState)
 
-compileARF :: AState Int Int Int
+compileARF :: AState Int (Tainted Int) Int
 compileARF = EF.runElgot countARF (AR.interp handleState)
 
 compileM :: State Int Int
