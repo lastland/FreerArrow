@@ -34,6 +34,7 @@ library
       Control.Arrow.Freer.FreerArrowFinal
       Control.Arrow.Freer.FreerArrowOps
       Control.Arrow.Freer.FreerArrowRouter
+      Control.Arrow.Freer.FreerChoiceArrowRouter
       Control.Arrow.Freer.FreerArrowSimple
       Control.Arrow.Freer.FreerChoiceArrow
       Control.Arrow.Freer.FreerChoiceArrowB
@@ -41,8 +42,10 @@ library
       Control.Arrow.Freer.Internal
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Router
+      Control.Arrow.Freer.RouterChoice
       Control.Arrow.Freer.Sum2
       Control.Arrow.Routed.Classes
+      Control.Arrow.Routed.ClassesChoice
       Control.Arrow.State.ArrowState
       Control.Arrow.State.AState
       Control.Monad.Freer.FreerMonad
