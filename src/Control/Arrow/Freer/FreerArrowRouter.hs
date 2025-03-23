@@ -117,3 +117,7 @@ interp :: (Strong arr, Choice arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom r) = arr $ route r
 interp handler (Comp f x y) = bridge f (handler x) >>> interp handler y
+
+instance (forall a b. Show (e a b)) => Show (FreerArrow e x y) where
+  show (Hom r) = "Hom[" ++ show r ++ "]"
+  show (Comp f e c) = "(" ++ show f ++ "[" ++ show e ++ "] >>>\n" ++ show c ++ ")"

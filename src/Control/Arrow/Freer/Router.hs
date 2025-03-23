@@ -96,3 +96,26 @@ newtype ContraBridge a b y x = ContraBridge (Bridge x a b y)
 
 instance Contravariant (ContraBridge a b y) where
   contramap f (ContraBridge r) = ContraBridge $ cmapBridge f r
+
+instance Show (Router x y) where
+  show IdRoute = "id"
+  show LeftRot = "LRot"
+  show RightRot = "RRot"
+  show FstRoute = "Fst"
+  show SndRoute = "Snd"
+  show DupRoute = "Dup"
+  show SwapRoute = "Swap"
+  show (AppFirst r) = "{AppFirst{" ++ show r ++ "}"
+  show (AppSecond r) = "AppSecond{" ++ show r ++ "}"
+  show (AppLeft r) = "AppLeft{" ++ show r ++ "}"
+  show (AppRight r) = "AppRight{" ++ show r ++ "}"
+  show (CompRoute r1 r2) = "{" ++ show r1 ++ " >>> " ++ show r2 ++ "}"
+  show (FunRoute _) = "Fun"
+
+instance Show (Bridge x a b y) where
+  show IdBridge = "_"
+  show (FirstBridge r) = "First{" ++ show r ++ "}"
+  show (SecondBridge r) = "Second{" ++ show r ++ "}"
+  show (LRouterBridge f r) = "LRouter{" ++ show f ++ " >>> " ++ show r ++ "}"
+  show (LmapBridge _ r) = "LMap{" ++ show r ++ "}"
+
