@@ -37,7 +37,7 @@ class Arrow a => ArrowState s a where
 modify :: ArrowState s a => (s -> b -> s) -> a b s 
 modify f = arr (\b -> (b, b)) >>> first get >>> arr (uncurry f)
 
-newtype StateA s a b = StateA (Kleisli (State s) a b)
+newtype StateA s a b = StateA { unStateA :: Kleisli (State s) a b }
   deriving (Category, Arrow, ArrowChoice, ArrowApply, Profunctor, Strong, Choice)
 
 -- |- StateA is an ArrowState

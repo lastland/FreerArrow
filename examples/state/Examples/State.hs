@@ -9,7 +9,10 @@
 module Examples.State where
 
 import Control.Category
+import Control.Monad.Trans.State.Lazy hiding (get, put)
 import Control.Arrow
+import Control.Arrow.Freer.Router
+import Control.Arrow.Freer.FreerArrowRouter
 import Control.Arrow.State.ArrowState
 import Prelude hiding ((.), id)
 
@@ -43,3 +46,21 @@ inc' = proc x -> do
   a <- put -< s + 1
   b <- put -< s + 1
   returnA -< a - b
+
+instance Show (StateEff s a b) where
+  show Get = "Get"
+  show Put = "Put"
+
+getput :: FreerArrow (StateEff s) a b -> FreerArrow (StateEff s) a b
+getput (Comp f Get (Comp IdBridge Put k)) = Comp f Get k
+getput x = x
+
+getput_echo_Int :: FreerArrow (StateEff Int) () Int
+getput_echo_Int = getput echo
+
+getput_echo_Int_StateA :: StateA Int () Int
+getput_echo_Int_StateA = interp handleState getput_echo_Int
+
+getput_echo_pure :: Int -> Int
+getput_echo_pure = execState ((runKleisli . unStateA $ getput_echo_Int_StateA) ())
+
