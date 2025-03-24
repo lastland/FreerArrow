@@ -111,11 +111,14 @@ instance Show (Router x y) where
   show (AppRight r) = "AppRight{" ++ show r ++ "}"
   show (CompRoute r1 r2) = "{" ++ show r1 ++ " >>> " ++ show r2 ++ "}"
   show (FunRoute _) = "Fun"
+  show CleanRoute = "Clean"
 
 instance Show (Bridge x a b y) where
   show IdBridge = "_"
   show (FirstBridge r) = "First{" ++ show r ++ "}"
   show (SecondBridge r) = "Second{" ++ show r ++ "}"
+  show (LeftBridge r) = "Left{" ++ show r ++ "}"
+  show (RightBridge r) = "Right{" ++ show r ++ "}"
   show (LRouterBridge f r) = "LRouter{" ++ show f ++ " >>> " ++ show r ++ "}"
   show (LmapBridge _ r) = "LMap{" ++ show r ++ "}"
 

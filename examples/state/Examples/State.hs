@@ -13,9 +13,6 @@ import Control.Arrow
 import Control.Arrow.Freer.FreerArrowRouter
 import Control.Arrow.Freer.Router
 import Control.Arrow.State.ArrowState
-import Control.Arrow.Freer.Sum2
-import Data.Profunctor
-import Data.Proxy
 import Prelude hiding ((.), id)
 
 -- |- A program that reads from the state and writes back the state.
@@ -49,11 +46,17 @@ inc' = proc x -> do
   b <- put -< s + 1
   returnA -< a - b
 
-instance Show (forall a b. StateEff s a b) where
+instance Show (StateEff s a b) where
   show Get = "Get"
   show Put = "Put"
 
 getput :: FreerArrow (StateEff s) a b -> FreerArrow (StateEff s) a b
 getput (Comp f Get (Comp (LRouterBridge CleanRoute IdBridge) Put k)) = Comp f Get k
 getput x = x
+
+getput_echo_Int :: FreerArrow (StateEff Int) () Int
+getput_echo_Int = getput echo
+
+getput_echo_Int_StateA :: StateA Int () Int
+getput_echo_Int_StateA = interp handleState getput_echo_Int
 
