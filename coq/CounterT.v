@@ -304,13 +304,101 @@ Section CounterTLaws.
         { extensionality a. destruct a as [[? ?] ?]. cbn. reflexivity. }
         (* Odd. *) unfold Category__Fun in H2. rewrite H2. reflexivity.
       - (* first_and *)
-        admit.
+        destruct HP, HC, Hstrong, HPre, HL, HCL, HPL, HR, HAL.
+        autounfold with counterT in *. cbn.
+        intros. rewrite !dimap_arr_comp, !first_distr, !first_arr. cbn. 
+        repeat (rewrite <- comp_assoc, <- arr_distr).
+        rewrite !comp_assoc. rewrite <- !arr_distr.
+        assert ((arr (B * nat * Y * nat) (B * Y * nat)
+                     (fun a : B * nat * Y * nat =>
+                      let
+                      '(y, n1, n2) :=
+                       let '(x, n, y) := let '(a0, c) := a in (let '(x, n, y) := a0 in (x, y, n), c) in (x, y, n) in
+                       (y, (n1 + n2)%nat))) ≈
+                 comp _ _ _ (arr _ _ assoc) (arr _ _ (fun '(b, n1, (y, n2)) => (b, y, (n2 + n1)%nat)))).
+        { rewrite <- arr_distr.
+          assert ((fun a : B * nat * Y * nat =>
+                     let
+                       '(y, n1, n2) := let '(x, n, y) := let '(a0, c) := a in (let '(x, n, y) := a0 in (x, y, n), c) in (x, y, n) in
+                     (y, (n1 + n2)%nat)) =
+                    (fun a : B * nat * Y * nat => let '(b, n1, (y, n2)) := assoc a in (b, y, (n2 + n1)%nat))).
+          { extensionality a. destruct a as [[[? ?] ?] ?]. cbn. reflexivity. }
+          rewrite H0. reflexivity. }
+        rewrite H0, <- (comp_assoc (A * Y * nat) (B * nat * Y * nat) _ (B * Y * nat)), first_first, !comp_assoc.
+        rewrite <- (comp_assoc (A * X) (A * X) (A * Y * nat) (B * Y * nat)), <- arr_distr.
+        rewrite <- (comp_assoc (A * X) (A * Y * nat) (A * Y * nat) (B * Y * nat)), <- arr_distr.
+        rewrite <- (comp_assoc (A * X) (A * Y * nat) (A * Y * nat) (B * Y * nat)), <- arr_distr.
+        rewrite <- (comp_assoc (A * X) (A * Y * nat) (A * (Y * nat)) (B * Y * nat)), <- arr_distr.
+        assert ((fun a : A * X => assoc (swap (let '(a0, c) := swap (let '(a0, c) := a in (a0, c)) in (g a0, c)), 0)) =
+               (fun '(a, x) => (a, (g x, 0)))).
+        { extensionality a. destruct a. cbn. reflexivity. }
+        rewrite H1.
+        assert ((fun '(a, x) => (a, (g x, 0))) =
+                  @parMul _ A A X (Y * nat) _ _ _ _ _ (fun a => a) (fun x => (g x, 0))).
+        { extensionality a. destruct a. cbn. reflexivity. }
+        rewrite H2, <- (comp_assoc (A * X) (A * (Y * nat)) _ (B * Y * nat)), <- first_and.
+        rewrite !comp_assoc, <- arr_distr, arr_id, left_id.
+        remember (fun a : B * nat * X => _) as func. cbn.
+        assert (func = (fun a : B * nat * X =>
+                          let
+                            '(b, n1, (y, n2)) := swap (let '(a0, c) := swap (let '(a0, c) := a in (a0, c)) in (g a0, 0, c)) in
+                          (b, y, (n2 + n1)%nat))).
+        { extensionality a. subst. destruct a as [[? ?] ?]. cbn. f_equal. lia. }
+        rewrite <- H3. reflexivity. 
       - (* first_first *)
-        admit.
+        destruct HP, HC, Hstrong, HPre, HL, HCL, HPL, HR, HAL.
+        autounfold with counterT in *. cbn.
+        intros. rewrite !dimap_arr_comp, !first_distr, !first_arr. cbn.
+        rewrite !arr_id, !left_id, !comp_assoc, <- !arr_distr.
+        remember (fun a : B * nat * Y * X => _) as func1.
+        assert (func1 = (fun '(b, n, y, x) => (b, (y, x), n))).
+        { subst. extensionality a. destruct a as [[[? ?] ?] ?].
+          cbn. f_equal. lia. }
+        rewrite H0. clear H0. clear Heqfunc1. clear func1.
+        remember (fun a : B * nat * (Y * X) * nat => _) as func2.
+        assert (func2 = (fun '(b, n1, (y, x), n2) => (b, (y, x), (n2 + n1)%nat))).
+        { subst. extensionality a. destruct a as [[[? ?] [? ?]] ?].
+          cbn. reflexivity. }
+        rewrite H0. clear H0. clear Heqfunc2. clear func2.
+        remember (fun a : B * nat * Y * X => _) as func1.
+        remember (fun a : B * nat * (Y * X) * nat => _) as func2.
+        assert (arr _ _ func1 ≈ comp _ _ _ (arr _ _ assoc) (arr _ _ (fun '(b, n, (y, x)) => (b, (y, x), n)))).
+        { rewrite <- arr_distr.
+          assert (func1 = (fun a : B * nat * Y * X => let '(b, n, (y, x)) := assoc a in (b, (y, x), n))).
+          { extensionality a. subst. destruct a as [[[? ?] ?] ?]. cbn. reflexivity. }
+          rewrite <- H0. reflexivity. }
+        rewrite H0, <- (comp_assoc (A * Y * X) (B * nat * Y * X) _ (B * (Y * X) * nat)), first_first.
+        rewrite !comp_assoc.
+        replace (fun '((a, c) : A * Y * X) => (a, c)) with (fun a : A * Y * X => a).
+        2: { extensionality a. destruct a as [[? ?] ?]. reflexivity. }
+        rewrite arr_id, left_id.
+        assert (arr _ _ func2 ≈ comp _ _ _ (arr _ _ assoc) (arr _ _ (fun '(b, n1, ((y, x), n2)) =>
+                                                                       (b, (y, x), (n2 + n1)%nat)))).
+        { rewrite <- arr_distr.
+          assert (func2 = (fun a : B * nat * (Y * X) * nat => let '(b, n1, (y, x, n2)) := assoc a in (b, (y, x), (n2 + n1)%nat))).
+          { extensionality a. subst. destruct a as [[[? ?] [? ?]] ?].
+            cbn. reflexivity. }
+          rewrite <- H1. reflexivity. }               
+        rewrite H1, <- (comp_assoc (A * (Y * X) * nat) (B * nat * (Y * X) * nat) _ (B * (Y * X) * nat)), first_first.
+        rewrite !comp_assoc.
+        rewrite <- (comp_assoc (A * (Y * X)) (A * (Y * X) * nat) _ (B * (Y * X) * nat)), <- arr_distr.
+        rewrite <- (comp_assoc (A * (Y * X)) (A * (Y * X) * nat) _ (B * (Y * X) * nat)), <- arr_distr.
+        assert ((fun a : A * (Y * X) => assoc (a, 0)) =
+                  @parMul _ A A (Y * X) (Y * X * nat) _ _ _ _ _ (fun x : A => x) (fun '((y, x) : Y * X) => ((y, x), 0))).
+        { extensionality a. destruct a as [? [? ?]]. cbn. reflexivity. }
+        rewrite H2. rewrite <- (comp_assoc (A * (Y * X)) (A * (Y * X * nat)) _ (B * (Y * X) * nat)), <- first_and.
+        rewrite !comp_assoc, <- arr_distr. cbn.
+        assert ((fun '(b, n, (y, x)) => (b, (y, x), n)) = (fun a : B * nat * (Y * X) =>
+                                                          let
+                                                            '(b, n1, (y, x, n2)) :=
+                                                            swap (let '(a0, c) := swap (let '(a0, c) := a in (a0, c)) in (let '(y, x) := a0 in (y, x, 0), c)) in
+                                                          (b, (y, x), (n2 + n1)%nat))).
+        { extensionality a. destruct a as [[? ?] [? ?]]. cbn. reflexivity. }
+        rewrite <- H3. reflexivity.
       - (* first_proper *)
         destruct HP, HC, Hstrong, HPre, HL, HCL, HPL, HR, HAL.
         autounfold with counterT in *. cbn.
         intros. intros x1 x2 Heqx. rewrite !dimap_arr_comp. rewrite Heqx. reflexivity.
-    Admitted.
+    Qed.
         
 End CounterTLaws.
