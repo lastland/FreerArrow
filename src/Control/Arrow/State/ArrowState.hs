@@ -19,6 +19,7 @@ import qualified Control.Arrow.Freer.FreerArrowRouter as R
 import Control.Category
 import Control.Arrow
 import Control.Arrow.Freer.FreerArrow
+import Control.Arrow.Freer.Router
 import Control.Arrow.Freer.FreerChoiceArrow (FreerChoiceArrow)
 import Control.Arrow.Freer.KleisliFreer     (KleisliFreer)
 import Control.Monad.Freer.Sum1
@@ -43,6 +44,10 @@ newtype StateA s a b = StateA (Kleisli (State s) a b)
 instance ArrowState s (StateA s) where
   get = StateA $ Kleisli $ const M.get
   put = StateA $ Kleisli $ \s -> M.put s >> return s
+
+instance ArrowState s (R.FreerArrow (StateEff s)) where
+  get = R.Comp IdBridge Get $ R.Hom CleanRoute
+  put = R.Comp IdBridge Put $ R.Hom CleanRoute
 
 -- |- A freer arrow is an ArrowState.
 instance Inj2 (StateEff s) e => ArrowState s (FreerArrow e) where
