@@ -1,6 +1,7 @@
 Require Import Coq.Classes.Equivalence.
 (* Assume functional extensionality for simplicity. *)
 Require Import Coq.Logic.FunctionalExtensionality.
+Require Import Coq.Classes.Morphisms.
 From Hammer Require Import Tactics.
 
 Open Scope type_scope.
@@ -124,7 +125,8 @@ Section Laws.
     {
       left_id  : forall {A B} (f : I A B), id >>> f ≈ f ;
       right_id : forall {A B} (f : I A B), f >>> id ≈ f ;
-      comp_assoc : forall {A B C Y} (f : I A B) (g : I B C) (h : I C Y), (f >>> g) >>> h ≈ f >>> (g >>> h) 
+      comp_assoc : forall {A B C Y} (f : I A B) (g : I B C) (h : I C Y), (f >>> g) >>> h ≈ f >>> (g >>> h) ;
+      comp_Proper : forall {A B C}, Proper (@eq A B ==> @eq B C ==> @eq A C) comp                                                                             
     }.
   
   (** Pre-arrow laws. *)
@@ -135,16 +137,23 @@ Section Laws.
       arr_distr : forall {A B C} (f : A -> B) (g : B -> C),  arr (f >>> g) ≈ arr f >>> arr g
     }.
 
+  Class Rigidity :=
+    {
+      dimap_arr_comp : forall A B X Y (f : X -> A) (g : B -> Y) (x : I A B),
+        dimap f g x ≈ arr f >>> x >>> arr g
+    }.
+
   (** Arrow laws. *)
   Context `{Arrow I}.
 
   Class ArrowLaws :=
     { first_arr : forall {A B C} (f : A -> B), @first _ _ _ _ _ C (arr f) ≈ arr (first f) ;
-      first_distr : forall {A B C} (f : I A B) (g : I B C), @first _ _ _ _ _ C (f >>> g) ≈ first f >>> first g ;
+      first_distr : forall {A B C D} (f : I A B) (g : I B C), @first _ _ _ _ _ D (f >>> g) ≈ first f >>> first g ;
       first_fst : forall {A B C} (f : I A B), @first _ _ _ _ _ C f >>> arr fst ≈ arr fst >>> f ;
       first_and : forall {A B X Y} (f : I A B) (g : X -> Y), first f >>> arr (id *** g) ≈ arr (id *** g) >>> first f ;
       first_first : forall {A B X Y} (f : I A B),
-        @first _ _ _ _ _ X (@first _ _ _ _ _ Y f) >>> arr assoc ≈ arr assoc >>> first f
+        @first _ _ _ _ _ X (@first _ _ _ _ _ Y f) >>> arr assoc ≈ arr assoc >>> first f ;
+      first_proper : forall {A B C}, Proper (@eq A B ==> @eq (A * C) (B * C)) first
     }.
 
   (** Choice arrow laws. *)
@@ -168,6 +177,9 @@ Instance CategoryLaws__Fun : CategoryLaws (fun A B => A -> B) (fun _ _ f g => f 
 Proof. sfirstorder. Qed.
 
 Instance PreArrowLaws__Fun : PreArrowLaws (fun A B => A -> B) (fun _ _ f g => f = g).
+Proof. sfirstorder. Qed.
+
+Instance Rigidity__Fun : Rigidity (fun A B => A -> B) (fun _ _ f g => f = g).
 Proof. sfirstorder. Qed.
 
 Instance ArrowLaws__Fun : ArrowLaws (fun A B => A -> B) (fun _ _ f g => f = g).

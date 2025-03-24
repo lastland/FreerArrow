@@ -1,13 +1,12 @@
 Section ID.
   Context {X : Type}.
   
-  Definition id (x : X) : X := x.
-
   Theorem id_idem : forall (x : X),
       id (id x) = x.
   Proof. intros. reflexivity. Qed.
-
 End ID.
+
+Locate id.
 
 Definition parFun {X Y A B} (f : X -> Y) (g : A -> B) : X * A -> Y * B :=
   fun '(x, a) => (f x, g a).
