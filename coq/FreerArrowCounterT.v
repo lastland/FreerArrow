@@ -5,7 +5,7 @@ Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
 From FreerArrows Require Import Common Tactics CounterT FreerArrow Classes.
-From Hammer Require Import Hammer Tactics.
+From Hammer Require Import Tactics.
 
 Open Scope type_scope.
 
@@ -32,13 +32,6 @@ Fixpoint interp' {E X Y I} `{Arrow I}
     | Comp f e x =>
         comp (dimap f (fun x => x) (first (tick (handler e)))) (interp' (@handler) x)
     end.
-
-Fixpoint take {a} (n : nat) (zs : list a) : list a :=
-  match n, zs with
-  | O, _ => nil
-  | _, nil => nil
-  | S n', cons x zs' => cons x (take n' zs')
-  end.
 
 Section StaticallyCountable.
 

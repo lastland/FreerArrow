@@ -2,7 +2,7 @@ Require Import Coq.Classes.Equivalence.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Lia.
 From FreerArrows Require Import Classes.
-From Hammer Require Import Hammer Tactics.
+From Hammer Require Import Tactics.
 
 Open Scope type_scope.
 
