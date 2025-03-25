@@ -7,7 +7,7 @@
 
 module Control.Arrow.Freer.FreerChoiceArrow where
 
-import qualified Data.Bifunctor as B (first)
+
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
@@ -38,6 +38,30 @@ embed f = Comp (\x -> Left (x, ())) f
                 (arr (\case
                          Left (b, _) -> b
                          Right b -> b))
+                
+assoc :: ((x, y), z) -> (x, (y, z))
+assoc ((x, y), z) = (x, (y, z))
+
+unassoc :: (x, (y, z)) -> ((x, y), z)
+unassoc (x, (y, z)) = ((x, y), z)
+
+distr :: (Either (a, b) c, d) -> Either ((a, b), d) (c, d)
+distr (Left (a, b), d) = Left ((a, b), d)
+distr (Right c, d) = Right (c, d)
+
+undistr :: Either ((a, b), d) (c, d) -> (Either (a, b) c, d)
+undistr (Left ((a, b), d)) = (Left (a, b), d)
+undistr (Right (c, d)) = (Right c, d)
+
+assocsum :: Either (Either a b) c -> Either a (Either b c)
+assocsum (Left (Left x)) = Left x
+assocsum (Left (Right y)) = Right (Left y)
+assocsum (Right z) = Right (Right z)
+
+unassocsum :: Either a (Either b c) -> Either (Either a b) c
+unassocsum (Left x) = Left $ Left x
+unassocsum (Right (Left y)) = Left $ Right y
+unassocsum (Right (Right z)) = Right z
 
 instance Arrow (FreerChoiceArrow e) where
   arr = Hom
@@ -56,26 +80,16 @@ instance Profunctor (FreerChoiceArrow e) where
 
 {-- begin Strong_FreerChoiceArrow --}
 instance Strong (FreerChoiceArrow e) where
-  first' (Hom f) = Hom $ B.first f
-  first' (Comp f a b) = Comp f' a (lmap g (first' b))
-      where f' (x, c) = case f x of
-              Left (x', z) -> Left (x', (z, c))
-              Right x' -> Right (x', c)
-            g (Left (y, (z, x))) = (Left (y, z), x)
-            g (Right (y, z))     = (Right y, z)
+  first' (Hom f) = Hom $ first f
+  first' (Comp f a b) = Comp (first f >>> distr >>> left assoc)
+                          a (lmap (left unassoc >>> undistr) (first' b))
 {-- end Strong_FreerChoiceArrow --}
 
 {-- begin Choice_FreerChoiceArrow --}
 instance Choice (FreerChoiceArrow e) where
-  left' (Hom f) = Hom $ B.first f
-  left' (Comp f a b) = Comp f' a (lmap g (left' b))
-        where f' (Left x)  = case f x of
-                               Left (x', z) -> Left (x', z)
-                               Right w -> Right (Left w)
-              f' (Right y) = Right (Right y)
-              g (Left (y, z))     = Left $ Left (y, z)
-              g (Right (Left w))  = Left $ Right w
-              g (Right (Right y)) = Right y
+  left' (Hom f) = Hom $ left f
+  left' (Comp f a b) = Comp (left f >>> assocsum)
+                        a (lmap unassocsum (left' b))
 {-- end Choice_FreerChoiceArrow --}
 
 instance Category (FreerChoiceArrow e) where
@@ -88,10 +102,10 @@ instance (forall a b. Show (e a b)) => Show (FreerChoiceArrow e x y) where
   show (Hom _) = "Hom"
   show (Comp _ e c) = "(" ++ show e ++ " >>> " ++ show c ++ ")"
 
-type x ~> y = forall a b. x a b -> y a b
-
+-- |- Freer choice arrows can be interpreted into any choice arrows, as long as
+-- we can provide an effect handler.
 interp :: (Profunctor arr, ArrowChoice arr) =>
-  (e ~> arr) -> FreerChoiceArrow e x y -> arr x y
+  (e :-> arr) -> FreerChoiceArrow e x y -> arr x y
 interp _       (Hom f) = arr f
 interp handler (Comp f x y) = lmap f (left (first (handler x))) >>>
                               interp handler y
