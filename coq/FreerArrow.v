@@ -4,7 +4,7 @@ Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Coq.Classes.Morphisms.
 Require Import Coq.Logic.Eqdep.
 
-From FreerArrows Require Import Common Tactics.
+From FreerArrows Require Import Common Tactics Classes.
 From Hammer Require Import Tactics.
 
 Open Scope type_scope.
@@ -73,10 +73,19 @@ Section Arrows.
     end.
 
   Definition rmap {X Y B} : (Y -> B) -> FreerArrow E X Y -> FreerArrow E X B :=
-    dimap id.
+    dimap Coq.Init.Datatypes.id.
 
 End Arrows.
 
+Section Classes.
+  Instance Profunctor__FreerArrow {F} : Profunctor (FreerArrow F) :=
+    {| Classes.dimap := @dimap F |}.
+
+  Instance StrongProfunctor__FreerArrow {F} : StrongProfunctor (FreerArrow F) :=
+    {| Classes.first := @first F |}.
+
+End Classes.
+  
 Definition par {E X Y A B}
   (f : FreerArrow E X Y) (g : FreerArrow E A B) : FreerArrow E (X * A) (Y * B) :=
   comp (first f) (comp (arr swap) (comp (first g) (arr swap))).
@@ -302,11 +311,11 @@ Section ArrowsLaws.
   Context {X Y Z A B: Type}.
   
   Theorem comp_id_r : forall (x : FreerArrow E X Y),
-      comp x (arr id) = x.
+      comp x (arr Coq.Init.Datatypes.id) = x.
   Proof. induction x; sauto. Qed.
 
   Corollary comp_id_r' : forall (x : FreerArrow E X Y),
-      comp x (arr id) ≈ x.
+      comp x (arr Coq.Init.Datatypes.id) ≈ x.
   Proof. sauto use: comp_id_r, eqImpliesArrowEq. Qed.
 
   Theorem arr_id : @arr E X X (fun x => x) = Hom (fun x => x).
@@ -363,7 +372,8 @@ Section ArrowsLaws.
 
   Theorem first_par :
     forall (f : FreerArrow E X Y) (g : A -> B),
-      comp (first f) (arr (parFun id g)) ≈ comp (arr (parFun id g)) (first f).
+      comp (first f) (arr (parFun Coq.Init.Datatypes.id g)) ≈
+        comp (arr (parFun Coq.Init.Datatypes.id g)) (first f).
   Proof.
     intros f g. induction f; intros; cbn.
     - econstructor. Unshelve.
@@ -378,13 +388,13 @@ Section ArrowsLaws.
       cbn. destruct f.
       + cbn. remember (ArrowSimilarCharTypEq (Comp _ _ _) _ _) as Hs.
         cbn in Hs. rewrite (UIP_refl _ _ Hs). cbn. unfold join.
-        extensionality x. destruct x. cbn. unfold id. sauto.
+        extensionality x. destruct x. cbn. unfold Coq.Init.Datatypes.id. sauto.
       + revert H0. cbn in *. inversion H. inj_pair2_all.
         pose proof (ArrowSimilarCharTypEq _ _ H1) as Ht. 
         remember (ArrowSimilarCharTypEq _ _ H) as Hpre.
         remember (ArrowSimilarCharTypEq _ _ (CompSimilar _ _ _ _ _ _ _ _ _ _)) as Hpost.
         cbn in Hpre, Hpost. generalize Hpre Hpost. unfold eq_rect. cbn.
-        generalize (character (comp (lmap unassoc (first' f)) (arr (parFun id g)))).
+        generalize (character (comp (lmap unassoc (first' f)) (arr (parFun Coq.Init.Datatypes.id g)))).
         rewrite Ht. intros. revert H0.
         rewrite (UIP_refl _ _ Hpre0). rewrite (UIP_refl _ _ Hpost0).
         unfold join. cbn. intros.
@@ -396,9 +406,9 @@ Section ArrowsLaws.
                     (a, fun b : B1 => c (b, c0))) as func1.
         remember (fun x : B0 * C * A =>
                     let
-                      '(a, c) := let '(x0, a) := parFun id g x in let (x', b) := p0 x0 in (x', (b, a)) in
+                      '(a, c) := let '(x0, a) := parFun Coq.Init.Datatypes.id g x in let (x', b) := p0 x0 in (x', (b, a)) in
                     (a, fun b : B1 => character (lmap unassoc (first' f)) (b, c))) as func2.
-        extensionality x. destruct x. unfold id. cbn. destruct (p x).
+        extensionality x. destruct x. unfold Coq.Init.Datatypes.id. cbn. destruct (p x).
         f_equal. extensionality b.
         assert (func1 (b, c0, a) = func2 (b, c0, a)).
         { rewrite H0. reflexivity. }
@@ -468,7 +478,7 @@ Section ProfunctorLaws.
   (* Profunctor laws. *)
 
   Theorem dimap_id : forall (x : FreerArrow E X Y),
-      dimap id id x = x.
+      dimap Coq.Init.Datatypes.id Coq.Init.Datatypes.id x = x.
   Proof. induction x; sauto use:comp_id_r. Qed.
 
   Theorem dimap_dimap : forall A' B' (x : FreerArrow E X Y)
@@ -480,12 +490,12 @@ Section ProfunctorLaws.
     intros. cbn. 
     destruct x; [sfirstorder |].
     cbn in IHx. cbn. do 2 f_equal.
-    specialize (IHx _ _ _ _ id id h i). 
+    specialize (IHx _ _ _ _ Coq.Init.Datatypes.id Coq.Init.Datatypes.id h i). 
     inversion IHx. inj_pair2_all. assumption.
   Qed.
 
   Theorem lmap_dimap : forall (f : A -> X) (x : FreerArrow E X Y),
-      lmap f x = dimap f id x.
+      lmap f x = dimap f Coq.Init.Datatypes.id x.
   Proof.
     induction x; cbn; [reflexivity |].
     sauto use: @comp_id_r unfold: arr.
