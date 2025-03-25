@@ -53,6 +53,7 @@ instance Show (StateEff s a b) where
 
 getput :: FreerArrow (StateEff s) a b -> FreerArrow (StateEff s) a b
 getput (Comp f Get (Comp IdBridge Put k)) = Comp f Get k
+getput (Comp f e k) = Comp f e $ getput k
 getput x = x
 
 getput_echo_Int :: FreerArrow (StateEff Int) () Int
