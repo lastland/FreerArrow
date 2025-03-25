@@ -1,3 +1,6 @@
+(** This approach is abandoned in favor of [CounterTB.v]. Please refer to that
+    file. *)
+
 Require Import Coq.Classes.Equivalence.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Lia.

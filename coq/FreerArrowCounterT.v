@@ -1,3 +1,6 @@
+(** This approach is abandoned in favor of [FreerArrowCounterTB.v]. Please refer
+    to that file. *)
+
 Require Import Coq.Classes.Equivalence.
 (* Assume functional extensionality for simplicity. *)
 Require Import Coq.Logic.FunctionalExtensionality.

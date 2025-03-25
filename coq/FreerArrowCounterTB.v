@@ -84,9 +84,8 @@ Section StaticallyCountable.
       assert ((S n + count f)%nat = (n + S (count f))%nat).
       { lia. }
       rewrite <- H3, IHf, <- (comp_assoc (B * C) (B * C) _ (Y * nat)), <- arr_distr.
-      apply Hcomp.
-      + apply Harr. extensionality a. fcrush.
-      + reflexivity.
+      apply Hcomp; [| reflexivity].
+      apply Harr. extensionality a. fcrush.
   Qed.
 
 End StaticallyCountable.
