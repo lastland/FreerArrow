@@ -95,6 +95,9 @@ Defined.
 Definition assoc {X Y Z} : X * Y * Z -> X * (Y * Z) :=
   fun '(x, y, z) => (x, (y, z)).
 
+Definition unassoc {X Y Z} : X * (Y * Z) -> X * Y * Z :=
+  fun '(x, (y, z)) => (x, y, z).
+
 Definition assocsum {X Y Z} (s : X + Y + Z) : X + (Y + Z) :=
   match s with
   | inl (inl x) => inl x
@@ -169,6 +172,11 @@ Section Laws.
       left_proper :  forall {A B C}, Proper (@eq A B ==> @eq (A + C) (B + C)) left
     }.
 
+  Class ChoiceStrongLaws :=
+    { left_first : forall {A B X Y W V} (f : I A B) (g : X -> Y) (h : W -> V),
+        (left (first f)) >>> arr ((id *** g) +++ h) ≈ arr ((id *** g) +++ h) >>> left (first f)
+    }.
+
 End Laws.
   
 Instance ProfunctorLaws__Fun : ProfunctorLaws (fun A B => A -> B) (fun _ _ f g => f = g).
@@ -194,3 +202,6 @@ Proof.
   constructor; try solve [sfirstorder];
     try solve [intros; sauto lq: on use: functional_extensionality].
 Qed.
+
+Instance ChoiceStrongLaws__Fun : ChoiceStrongLaws (fun A B => A -> B) (fun _ _ f g => f = g).
+Proof. constructor; intros; sauto lq: on use: functional_extensionality. Qed.

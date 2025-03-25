@@ -9,3 +9,4 @@ FreerArrow.v
 FreerChoiceArrow.v
 FreerArrowCounterT.v
 FreerArrowCounterTB.v
+FreerChoiceArrowCounterTB.v

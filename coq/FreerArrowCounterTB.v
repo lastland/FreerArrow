@@ -6,7 +6,7 @@ Require Import Coq.Logic.Eqdep.
 Require Import Lia.
 
 From FreerArrows Require Import Common Tactics CounterTB FreerArrow Classes.
-From Hammer Require Import Hammer Tactics.
+From Hammer Require Import Tactics.
 
 Open Scope type_scope.
 
