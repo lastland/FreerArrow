@@ -75,20 +75,18 @@ instance Arrow (FreerArrow e) where
   second = second'
 {-- end Arrow_FreerArrow --}
 
--- instance Choice (FreerArrow e) where
---   left' (Hom IdRoute) = Hom IdRoute
---   left' (Hom r) = Hom $ AppLeft r
---   left' (Comp (LmapBridge f r) a b) =
---     lmap (left f) $ left' (Comp r a b)
---   left' (Comp r a b) =
---     Comp (LeftBridge r) a (left' b)
+instance Choice (FreerArrow e) where
+   left' (Hom r) = Hom $ left r
+   left' (Comp (LmapBridge f r) a b) =
+     lmap (left f) $ left' (Comp r a b)
+   left' (Comp r a b) =
+     Comp (LeftBridge r) a (left' b)
 
---   right' (Hom IdRoute) = Hom IdRoute
---   right' (Hom r) = Hom $ AppRight r
---   right' (Comp (LmapBridge f r) a b) =
---     lmap (right f) $ right' (Comp r a b)
---   right' (Comp r a b) =
---     Comp (RightBridge r) a (right' b)
+   right' (Hom r) = Hom $ right r
+   right' (Comp (LmapBridge f r) a b) =
+     lmap (right f) $ right' (Comp r a b)
+   right' (Comp r a b) =
+     Comp (RightBridge r) a (right' b)
 
 -- instance ArrowChoice (FreerArrow e) where
 --   left = left'
@@ -108,7 +106,7 @@ instance Category (FreerArrow e) where
 
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
-interp :: (Strong arr, Arrow arr) =>
+interp :: (Strong arr, Choice arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom r) = arr r
 interp handler (Comp f x y) = bridge f (handler x) >>> interp handler y
