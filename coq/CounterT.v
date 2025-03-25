@@ -2,7 +2,7 @@ Require Import Coq.Classes.Equivalence.
 Require Import Coq.Logic.FunctionalExtensionality.
 Require Import Lia.
 From FreerArrows Require Import Classes.
-From Hammer Require Import Tactics.
+From Hammer Require Import Hammer Tactics.
 
 Open Scope type_scope.
 
@@ -21,6 +21,13 @@ Instance Category__CounterT {I} `{StrongProfunctor I} {HC : Category I} : Catego
 
 Instance PreArrow__CounterT {I} `{StrongProfunctor I} {HC : Category I} `{PreArrow I} : PreArrow (CounterT I) | 100 :=
   {| arr := fun _ _ f => @comp I HC _ _ _ (arr f) (arr (fun y => (y, 0))) |}.
+
+Instance ChoiceProfunctor__CounterT {I} `{HC: ChoiceProfunctor I} : ChoiceProfunctor (CounterT I) | 100 :=
+  {| left := fun _ _ C a => dimap (fun x => x) (fun x => match x with
+                                                | inl (b, n) => (inl b, n)
+                                                | inr c => (inr c, 0)
+                                                end) (@left _ _ HC _ _ C a)
+  |}.
 
 Definition tick {I X Y} `{Arrow I} (i : I X Y) : CounterT I X Y :=
   dimap (fun x => x) (fun y => (y, 1)) i.
@@ -400,5 +407,49 @@ Section CounterTLaws.
         autounfold with counterT in *. cbn.
         intros. intros x1 x2 Heqx. rewrite !dimap_arr_comp. rewrite Heqx. reflexivity.
     Qed.
+
+    Context {HCP : ChoiceProfunctor I} {HCPA : ChoiceArrow I}.
+    Context {HCPL : ChoiceArrowLaws I (@eq)}.
+
+    Hint Unfold left : counterT.
+
+    Instance ChoiceArrowLaws__CounterT : ChoiceArrowLaws (CounterT I) (@eqC).
+    Proof.
+      destruct HP, HC, Hstrong, HPre, HCP, HCPA, HL, HCL, HPL, HR, HAL, HCPL.
+      assert (Harr: forall A B x y, x = y -> arr A B x ≈ arr A B y).
+      { intros. subst. reflexivity. }
+      constructor; autounfold with counterT in *; cbn.
+      - (* left_arr *)
+        intros. rewrite !dimap_arr_comp, !arr_id, !left_id.
+        rewrite <- !arr_distr, !left_arr. cbn. rewrite <- !arr_distr.
+        apply Harr. extensionality a. destruct a; reflexivity.
+      - (* left_distr *)
+        intros. rewrite !dimap_arr_comp, !arr_id, !left_id, !comp_assoc.
+        rewrite <- !arr_distr, !left_distr, !left_arr. cbn.
+        rewrite !first_distr, !first_arr. cbn. rewrite !comp_assoc, <- !arr_distr.
+        remember (fun a : C * nat * nat + D => _) as func1.
+        assert (func1 = (fun x => match x with
+                               | inl c => match c with
+                                         | (c, n1, n2) => (inl c, (n2 + n1)%nat)
+                                         end
+                               | inr d => (inr d, 0)
+                               end)).
+        { extensionality x. subst. fcrush. }
+        rewrite H0. clear H0. clear Heqfunc1. clear func1.
+        remember (fun a : C * nat * nat + D => _) as func1.
+        remember (fun x : B * nat + D => _) as func2.
+        remember (fun a : (C * nat + D) * nat => _) as func3.
+        assert (func3 = (fun '(x, n) => match x with
+                                     | inl c =>
+                                         match c with
+                                         | (c, n') => (inl c, (n + n')%nat)
+                                         end
+                                     | inr d => (inr d, n)
+                                     end)).
+        { extensionality x. subst. fcrush. }
+        rewrite H0. clear H0. clear Heqfunc3. clear func3.
+        remember (fun a : (C * nat + D) * nat => _) as func3.
+        (* Needs reasoning about interaction between [first] and [left]. *)
+    Abort.
         
 End CounterTLaws.

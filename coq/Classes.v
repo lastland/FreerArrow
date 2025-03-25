@@ -161,11 +161,12 @@ Section Laws.
   
   Class ChoiceArrowLaws :=
     { left_arr : forall {A B C} (f : A -> B), @left _ _ _ _ _ C (arr f) ≈ arr (left f) ;
-      left_distr : forall {A B C} (f : I A B) (g : I B C), @left _ _ _ _ _ C (f >>> g) ≈ left f >>> left g ;
+      left_distr : forall {A B C D} (f : I A B) (g : I B C), @left _ _ _ _ _ D (f >>> g) ≈ left f >>> left g ;
       left_inl : forall {A B C} (f : I A B), f >>> arr inl ≈ arr inl >>> @left _ _ _ _ _ C f ;
       left_and : forall {A B X Y} (f : I A B) (g : X -> Y), left f >>> arr (id +++ g) ≈ arr (id +++ g) >>> left f ;
       left_left : forall {A B X Y} (f : I A B),
-        @left _ _ _ _ _ X (@left _ _ _ _ _ Y f) >>> arr assocsum ≈ arr assocsum >>> left f
+        @left _ _ _ _ _ X (@left _ _ _ _ _ Y f) >>> arr assocsum ≈ arr assocsum >>> left f ;
+      left_proper :  forall {A B C}, Proper (@eq A B ==> @eq (A + C) (B + C)) left
     }.
 
 End Laws.
