@@ -46,6 +46,7 @@ library
       Control.Arrow.Freer.Router
       Control.Arrow.Freer.RouterChoice
       Control.Arrow.Freer.Sum2
+      Control.Arrow.Freer.Translation
       Control.Arrow.Routed.Classes
       Control.Arrow.Routed.ClassesChoice
       Control.Arrow.State.ArrowMapState
