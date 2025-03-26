@@ -95,6 +95,9 @@ Defined.
 Definition assoc {X Y Z} : X * Y * Z -> X * (Y * Z) :=
   fun '(x, y, z) => (x, (y, z)).
 
+Definition unassoc {X Y Z} : X * (Y * Z) -> X * Y * Z :=
+  fun '(x, (y, z)) => (x, y, z).
+
 Definition assocsum {X Y Z} (s : X + Y + Z) : X + (Y + Z) :=
   match s with
   | inl (inl x) => inl x
@@ -161,11 +164,17 @@ Section Laws.
   
   Class ChoiceArrowLaws :=
     { left_arr : forall {A B C} (f : A -> B), @left _ _ _ _ _ C (arr f) ≈ arr (left f) ;
-      left_distr : forall {A B C} (f : I A B) (g : I B C), @left _ _ _ _ _ C (f >>> g) ≈ left f >>> left g ;
+      left_distr : forall {A B C D} (f : I A B) (g : I B C), @left _ _ _ _ _ D (f >>> g) ≈ left f >>> left g ;
       left_inl : forall {A B C} (f : I A B), f >>> arr inl ≈ arr inl >>> @left _ _ _ _ _ C f ;
       left_and : forall {A B X Y} (f : I A B) (g : X -> Y), left f >>> arr (id +++ g) ≈ arr (id +++ g) >>> left f ;
       left_left : forall {A B X Y} (f : I A B),
-        @left _ _ _ _ _ X (@left _ _ _ _ _ Y f) >>> arr assocsum ≈ arr assocsum >>> left f
+        @left _ _ _ _ _ X (@left _ _ _ _ _ Y f) >>> arr assocsum ≈ arr assocsum >>> left f ;
+      left_proper :  forall {A B C}, Proper (@eq A B ==> @eq (A + C) (B + C)) left
+    }.
+
+  Class ChoiceStrongLaws :=
+    { left_first : forall {A B X Y W V} (f : I A B) (g : X -> Y) (h : W -> V),
+        (left (first f)) >>> arr ((id *** g) +++ h) ≈ arr ((id *** g) +++ h) >>> left (first f)
     }.
 
 End Laws.
@@ -193,3 +202,6 @@ Proof.
   constructor; try solve [sfirstorder];
     try solve [intros; sauto lq: on use: functional_extensionality].
 Qed.
+
+Instance ChoiceStrongLaws__Fun : ChoiceStrongLaws (fun A B => A -> B) (fun _ _ f g => f = g).
+Proof. constructor; intros; sauto lq: on use: functional_extensionality. Qed.

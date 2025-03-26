@@ -47,11 +47,11 @@ incNAR n | n > 0     = get >>> lmap (+1) put >>> incNAR (n - 1)
          | otherwise = get
 
 incNM :: Int -> M.FreerMonad (StateEff1 Int) Int
-incNM n | n > 0     = ((+1) :: Int -> Int) <$> S.get >>= S.put >> incNM (n - 1)
+incNM n | n > 0     = S.get >>= S.put . (+(1 :: Int)) >> incNM (n - 1)
         | otherwise = S.get 
 
 incNF :: Int -> F.FreerMonad (StateEff1 Int) Int
-incNF n | n > 0     = ((+1) :: Int -> Int) <$> S.get >>= S.put >> incNF (n - 1)
+incNF n | n > 0     = S.get >>= S.put . (+(1 :: Int)) >> incNF (n - 1)
         | otherwise = S.get 
 
 compileA :: AState Int Int Int

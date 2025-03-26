@@ -44,8 +44,8 @@ embed f = Comp (,()) f (lmap fst id)
 
 -- ((x, y), z), (x, (y, z)), and (x, y, z) are all different in Haskell, unlike
 -- in Rocq Prover.
-assoc :: ((x, y), z) -> ((x, y), z)
-assoc ((x, y), z) = ((x, y), z)
+assoc :: ((x, y), z) -> (x, (y, z))
+assoc ((x, y), z) = (x, (y, z))
 
 unassoc :: (x, (y, z)) -> ((x, y), z)
 unassoc (x, (y, z)) = ((x, y), z)
@@ -63,10 +63,9 @@ instance Profunctor (FreerArrow e) where
 {-- begin Strong_FreerArrow --}
 -- |- Freer arrows are strong profunctors.
 instance Strong (FreerArrow e) where
-  first' (Hom f) = Hom $ \(x, a) -> (f x, a)
+  first' (Hom f) = Hom $ first f
   first' (Comp f a b) =
-    Comp (\(x, a') ->
-             let (x', b') = f x in (x', (b', a')))
+    Comp (first f >>> assoc)
          a (lmap unassoc (first' b))
 {-- end Strong_FreerArrow --}
 
