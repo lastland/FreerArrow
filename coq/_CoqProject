@@ -2,11 +2,8 @@
 
 Common.v
 Classes.v
-CounterT.v
 CounterTB.v
 Tactics.v
 FreerArrow.v
 FreerChoiceArrow.v
-FreerArrowCounterT.v
 FreerArrowCounterTB.v
-FreerChoiceArrowCounterTB.v
