@@ -27,29 +27,29 @@ library
   exposed-modules:
       Control.Arrow.Arrow
       Control.Arrow.Exception.ArrowException
+      Control.Arrow.Freer.Bridge
       Control.Arrow.Freer.Elgot
       Control.Arrow.Freer.ElgotFinal
       Control.Arrow.Freer.FreerArrow
       Control.Arrow.Freer.FreerArrowB
+      Control.Arrow.Freer.FreerArrowBridge
       Control.Arrow.Freer.FreerArrowFinal
       Control.Arrow.Freer.FreerArrowOps
       Control.Arrow.Freer.FreerArrowRouter
-      Control.Arrow.Freer.FreerArrowBridge
-      Control.Arrow.Freer.FreerChoiceArrowRouter
       Control.Arrow.Freer.FreerArrowSimple
       Control.Arrow.Freer.FreerChoiceArrow
       Control.Arrow.Freer.FreerChoiceArrowB
+      Control.Arrow.Freer.FreerChoiceArrowRouter
       Control.Arrow.Freer.FreerPreArrow
       Control.Arrow.Freer.Internal
       Control.Arrow.Freer.KleisliFreer
       Control.Arrow.Freer.Router
-      Control.Arrow.Freer.Bridge
       Control.Arrow.Freer.RouterChoice
       Control.Arrow.Freer.Sum2
       Control.Arrow.Routed.Classes
       Control.Arrow.Routed.ClassesChoice
-      Control.Arrow.State.ArrowState
       Control.Arrow.State.ArrowMapState
+      Control.Arrow.State.ArrowState
       Control.Arrow.State.AState
       Control.Monad.Freer.FreerMonad
       Control.Monad.Freer.FreerMonadFinal
@@ -67,15 +67,14 @@ library
       base >=4.7 && <5
     , mtl
     , profunctors
-    , containers
   default-language: Haskell2010
 
 executable Comparison
   main-is: Main.hs
   other-modules:
       Examples.Countdown
-      Examples.State
       Examples.MapState
+      Examples.State
       Paths_FreerArrow
   autogen-modules:
       Paths_FreerArrow
@@ -90,7 +89,6 @@ executable Comparison
     , mtl
     , profunctors
     , timeit
-    , transformers
   default-language: Haskell2010
 
 executable Imp
