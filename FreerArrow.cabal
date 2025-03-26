@@ -51,6 +51,7 @@ library
       Control.Arrow.State.ArrowMapState
       Control.Arrow.State.ArrowState
       Control.Arrow.State.AState
+      Control.Arrow.Trans.Counter
       Control.Monad.Freer.FreerMonad
       Control.Monad.Freer.FreerMonadFinal
       Control.Monad.Freer.Sum1

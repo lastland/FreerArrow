@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE RankNTypes     #-}
 {-# LANGUAGE GADTs          #-}
 {-# LANGUAGE KindSignatures #-}
@@ -8,6 +9,7 @@ module Control.Arrow.Freer.Elgot where
 import Control.Category
 import Control.Arrow
 import Data.Kind
+import Data.Profunctor
 import Prelude hiding (id, (.))
 
 {-- begin Elgot --}
@@ -16,7 +18,7 @@ data Elgot f (e :: Type -> Type -> Type) x y where
 {-- end Elgot --}
 
 interp :: ArrowChoice arr =>
-  (forall a b. f e a b -> arr a b) -> Elgot f e x y -> arr x y
+  (f e :-> arr) -> Elgot f e x y -> arr x y
 interp h (Elgot l k) =
   let !l' = h l in
   let !k' = h k in

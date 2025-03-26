@@ -14,6 +14,9 @@ class Profunctor (p :: Type -> Type -> Type) where
 class Profunctor p => StrongProfunctor p where
   first' :: p a b -> p (a, c) (b, c)
 
+class Profunctor p => ChoiceProfunctor p where
+  left' :: p a b -> p (Either a c) (Either b c)
+
 class Category (cat :: k -> k -> Type) where
   id  :: forall (a :: k). cat a a
   (.) :: forall (b :: k) (c :: k) (a :: k).
@@ -25,6 +28,9 @@ class Category a => PreArrow a where
 class PreArrow a => Arrow a where
   first :: a b c -> a (b, d) (c, d)
 
+class PreArrow a => ChoiceArrow a where
+  left :: a b c -> a (Either b d) (Either c d)
+
 -- PreArrows are Profunctors
 instance PreArrow a => Profunctor a where
   dimap f g a = arr f >>> a >>> arr g
@@ -32,6 +38,10 @@ instance PreArrow a => Profunctor a where
 -- Arrows are StrongProfunctors
 instance Arrow a => StrongProfunctor a where
   first' = first
+
+-- ChoiceArrows are ChoiceProfunctors
+instance ChoiceArrow a => ChoiceProfunctor a where
+  left' = left
 
 -- A commonly used operator for categories
 (>>>) :: forall k (a :: k) (b :: k) (c :: k) (cat :: k -> k -> Type).
