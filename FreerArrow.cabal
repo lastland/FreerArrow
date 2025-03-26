@@ -90,6 +90,7 @@ executable Comparison
     , mtl
     , profunctors
     , timeit
+    , transformers
   default-language: Haskell2010
 
 executable Imp

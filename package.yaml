@@ -53,6 +53,7 @@ executables:
     - mtl
     - async
     - criterion
+    - transformers
     ghc-options:
     - -Wno-missing-export-lists
     - -Wno-unused-do-bind
