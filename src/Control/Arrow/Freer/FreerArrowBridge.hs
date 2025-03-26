@@ -30,14 +30,20 @@ overCount :: FreerArrow e x y -> Int
 overCount (Hom _) = 0
 overCount (Comp _  _ y) = 1 + overCount y
 
+mightSkip :: Bridge x a b y -> Bool
+mightSkip IdBridge = False
+mightSkip (FirstBridge b) = mightSkip b
+mightSkip (SecondBridge b) = mightSkip b
+mightSkip (LeftBridge _) = True
+mightSkip (RightBridge _) = True
+mightSkip (LmapBridge _ b) = mightSkip b
+
 -- |- We can also define underCount since we can match on the bridge to see
 -- if there is a LeftBridge or RightBridge which represents that the effect
 -- may not run.
 underCount :: FreerArrow e x y -> Int
 underCount (Hom _) = 0
-underCount (Comp (LeftBridge _) _ y) = underCount y
-underCount (Comp (RightBridge _) _ y) = underCount y
-underCount (Comp _  _ y) = 1 + underCount y
+underCount (Comp b _ y) = (if mightSkip b then 0 else 1) + underCount y
 
 -- The following is what I call a reified arrow. It is free if we define an
 -- equality that satisifies arrow laws and profunctor laws.
