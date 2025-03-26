@@ -4,20 +4,19 @@
 {-# LANGUAGE ImpredicativeTypes    #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 
-module Control.Arrow.Freer.FreerArrowRouter where
+module Control.Arrow.Freer.FreerArrowBridge where
 
 import Control.Category
 import Control.Arrow
 import Data.Profunctor
 import Prelude hiding (id, (.))
-import Control.Arrow.Freer.Router
-import Control.Arrow.Routed.Classes
+import Control.Arrow.Freer.Bridge
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
 {-- begin FreerArrow --}
 data FreerArrow e x y where
-  Hom :: Router x y -> FreerArrow e x y
+  Hom :: (x -> y) -> FreerArrow e x y
   Comp :: Bridge x a b z -> e a b ->
           FreerArrow e z y -> FreerArrow e x y
 {-- end FreerArrow --}
@@ -55,15 +54,13 @@ instance Profunctor (FreerArrow e) where
 
 {-- begin Strong_FreerArrow --}
 instance Strong (FreerArrow e) where
-  first' (Hom IdRoute) = Hom IdRoute
-  first' (Hom r) = Hom $ AppFirst r
+  first' (Hom r) = Hom $ first r
   first' (Comp (LmapBridge f r) a b) =
     lmap (first f) $ first' (Comp r a b)
   first' (Comp r a b) =
     Comp (FirstBridge r) a (first' b)
 
-  second' (Hom IdRoute) = Hom IdRoute
-  second' (Hom r) = Hom $ AppSecond r
+  second' (Hom r) = Hom $ second r
   second' (Comp (LmapBridge f r) a b) =
     lmap (second f) $ second' (Comp r a b)
   second' (Comp r a b) =
@@ -73,7 +70,7 @@ instance Strong (FreerArrow e) where
 {-- begin Arrow_FreerArrow --}
 -- |- Freer arrows are arrows.
 instance Arrow (FreerArrow e) where
-  arr f = Hom $ FunRoute f
+  arr f = Hom f
   first = first'
   second = second'
 {-- end Arrow_FreerArrow --}
@@ -96,16 +93,16 @@ instance Arrow (FreerArrow e) where
 -- instance ArrowChoice (FreerArrow e) where
 --   left = left'
 
-instance RoutedProfunctor (FreerArrow e) where
-  lmapR r1 (Hom r2) = Hom $ CompRoute r1 r2
-  lmapR r1 (Comp b e x) = Comp (cmapRouterBridge r1 b) e x
+-- instance RoutedProfunctor (FreerArrow e) where
+--   lmapR r1 (Hom r2) = Hom $ CompRoute r1 r2
+--   lmapR r1 (Comp b e x) = Comp (cmapRouterBridge r1 b) e x
 
 {-- begin Category_FreerArrow --}
 -- |- Freer arrows are categories.
 instance Category (FreerArrow e) where
-  id = Hom IdRoute
+  id = Hom id
 
-  f . (Hom r) = lmapR r f
+  f . (Hom r) = lmap r f
   f . (Comp f' x y) = Comp f' x (f . y)
 {-- end Category_FreerArrow --}
 
@@ -113,9 +110,9 @@ instance Category (FreerArrow e) where
 -- an effect handler.
 interp :: (Strong arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
-interp _       (Hom r) = arr $ route r
+interp _       (Hom r) = arr r
 interp handler (Comp f x y) = bridge f (handler x) >>> interp handler y
 
 instance (forall a b. Show (e a b)) => Show (FreerArrow e x y) where
-  show (Hom r) = "Hom[" ++ show r ++ "]"
+  show (Hom _) = "Hom"
   show (Comp f e c) = "(" ++ show f ++ "[" ++ show e ++ "] >>>\n" ++ show c ++ ")"

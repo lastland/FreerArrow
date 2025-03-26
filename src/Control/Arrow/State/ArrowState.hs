@@ -15,6 +15,7 @@ import qualified Control.Arrow.Freer.FreerArrowSimple as S
 import qualified Control.Arrow.Freer.FreerArrowOps as O
 import qualified Control.Arrow.Freer.KleisliFreer as K
 import qualified Control.Arrow.Freer.FreerArrowRouter as R
+import qualified Control.Arrow.Freer.FreerChoiceArrowRouter as CR
 
 import Control.Category
 import Control.Arrow
@@ -36,7 +37,7 @@ class Arrow a => ArrowState s a where
 modify :: ArrowState s a => (s -> b -> s) -> a b s 
 modify f = arr (\b -> (b, b)) >>> first get >>> arr (uncurry f)
 
-newtype StateA s a b = StateA (Kleisli (State s) a b)
+newtype StateA s a b = StateA { unStateA :: Kleisli (State s) a b }
   deriving (Category, Arrow, ArrowChoice, ArrowApply, Profunctor, Strong, Choice)
 
 -- |- StateA is an ArrowState
@@ -64,6 +65,10 @@ instance Inj2 (StateEff s) e => ArrowState s (O.FreerArrowOps e) where
 instance Inj2 (StateEff s) e => ArrowState s (R.FreerArrow e) where
   get = R.embed $ inj2 Get
   put = R.embed $ inj2 Put
+
+instance Inj2 (StateEff s) e => ArrowState s (CR.FreerArrow e) where
+  get = CR.embed $ inj2 Get
+  put = CR.embed $ inj2 Put
 
 instance Inj2 (StateEff s) e => ArrowState s (FreerChoiceArrow e) where
   get = C.embed $ inj2 Get

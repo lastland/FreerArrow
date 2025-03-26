@@ -8,7 +8,7 @@ import qualified Control.Monad.State.MonadState       as S
 import qualified Control.Monad.Freer.FreerMonad       as M
 import qualified Control.Monad.Freer.FreerMonadFinal  as F
 import qualified Control.Arrow.Freer.FreerChoiceArrow as AC
-import qualified Control.Arrow.Freer.FreerArrowRouter as AR
+import qualified Control.Arrow.Freer.FreerChoiceArrowRouter as AR
 import qualified Control.Arrow.Freer.FreerArrowOps    as AO
 import           Control.Arrow.Freer.Elgot
 import qualified Control.Arrow.Freer.ElgotFinal       as EF

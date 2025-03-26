@@ -1,6 +1,6 @@
 {-# LANGUAGE GADTs                 #-}
 
-module Control.Arrow.Freer.Router where
+module Control.Arrow.Freer.RouterChoice where
 
 import Data.Profunctor
 import Data.Functor.Contravariant
@@ -44,8 +44,8 @@ data Bridge x a b y where
   FirstBridge :: Bridge x a b y -> Bridge (x, c) a b (y, c)
   SecondBridge :: Bridge x a b y -> Bridge (c, x) a b (c, y)
   
-  -- LeftBridge  :: Bridge x a b y -> Bridge (Either x c) a b (Either y c)
-  -- RightBridge :: Bridge x a b y -> Bridge (Either c x) a b (Either c y)
+  LeftBridge  :: Bridge x a b y -> Bridge (Either x c) a b (Either y c)
+  RightBridge :: Bridge x a b y -> Bridge (Either c x) a b (Either c y)
 
   LRouterBridge :: Router w x -> Bridge x a b y -> Bridge w a b y
   LmapBridge :: (w -> x) -> Bridge x a b y -> Bridge w a b y
@@ -74,12 +74,12 @@ route (AppRight r) = right' (route r)
 route (CompRoute r1 r2) = route r2 . route r1
 route (FunRoute f) = f
 
-bridge :: Strong p => Bridge x a b y -> p a b -> p x y
+bridge :: (Strong p, Choice p) => Bridge x a b y -> p a b -> p x y
 bridge IdBridge = id
 bridge (FirstBridge r) = first' . bridge r
 bridge (SecondBridge r) = second' . bridge r
--- bridge (LeftBridge r) = left' . bridge r
--- bridge (RightBridge r) = right' . bridge r
+bridge (LeftBridge r) = left' . bridge r
+bridge (RightBridge r) = right' . bridge r
 bridge (LRouterBridge f r) = lmap (route f) . bridge r
 bridge (LmapBridge f r) = lmap f . bridge r
 
@@ -89,26 +89,3 @@ newtype ContraBridge a b y x = ContraBridge (Bridge x a b y)
 
 instance Contravariant (ContraBridge a b y) where
   contramap f (ContraBridge r) = ContraBridge $ cmapBridge f r
-
-instance Show (Router x y) where
-  show IdRoute = "id"
-  show LeftRot = "LRot"
-  show RightRot = "RRot"
-  show FstRoute = "Fst"
-  show SndRoute = "Snd"
-  show DupRoute = "Dup"
-  show SwapRoute = "Swap"
-  show (AppFirst r) = "{AppFirst{" ++ show r ++ "}"
-  show (AppSecond r) = "AppSecond{" ++ show r ++ "}"
-  show (AppLeft r) = "AppLeft{" ++ show r ++ "}"
-  show (AppRight r) = "AppRight{" ++ show r ++ "}"
-  show (CompRoute r1 r2) = "{" ++ show r1 ++ " >>> " ++ show r2 ++ "}"
-  show (FunRoute _) = "Fun"
-
-instance Show (Bridge x a b y) where
-  show IdBridge = "_"
-  show (FirstBridge r) = "First{" ++ show r ++ "}"
-  show (SecondBridge r) = "Second{" ++ show r ++ "}"
-  show (LRouterBridge f r) = "LRouter{" ++ show f ++ " >>> " ++ show r ++ "}"
-  show (LmapBridge _ r) = "LMap{" ++ show r ++ "}"
-
