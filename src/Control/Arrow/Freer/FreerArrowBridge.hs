@@ -11,6 +11,7 @@ import Control.Arrow
 import Data.Profunctor
 import Prelude hiding (id, (.))
 import Control.Arrow.Freer.Bridge
+import GHC.IO.Device (IODevice(seek))
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
@@ -21,12 +22,22 @@ data FreerArrow e x y where
           FreerArrow e z y -> FreerArrow e x y
 {-- end FreerArrow --}
 
--- A function that counts the number of effects in a freer arrow. This
--- illustrates that some static analysis can be performed on freer arrows. Even
--- if the effect can be stateful, we do not need to provide an initial state.
-count :: FreerArrow e x y -> Int
-count (Hom _) = 0
-count (Comp _ _ y) = 1 + count y
+-- |- This is called overCount because with FreerChoiceArrow, there is no
+-- guarantee that the effect will happen. Instead, the static analyzer gives us
+-- the worst case count---how many times effect would appear when all effects
+-- happen. 
+overCount :: FreerArrow e x y -> Int
+overCount (Hom _) = 0
+overCount (Comp _  _ y) = 1 + overCount y
+
+-- |- We can also define underCount since we can match on the bridge to see
+-- if there is a LeftBridge or RightBridge which represents that the effect
+-- may not run.
+underCount :: FreerArrow e x y -> Int
+underCount (Hom _) = 0
+underCount (Comp (LeftBridge _) _ y) = underCount y
+underCount (Comp (RightBridge _) _ y) = underCount y
+underCount (Comp _  _ y) = 1 + underCount y
 
 -- The following is what I call a reified arrow. It is free if we define an
 -- equality that satisifies arrow laws and profunctor laws.
@@ -75,23 +86,21 @@ instance Arrow (FreerArrow e) where
   second = second'
 {-- end Arrow_FreerArrow --}
 
--- instance Choice (FreerArrow e) where
---   left' (Hom IdRoute) = Hom IdRoute
---   left' (Hom r) = Hom $ AppLeft r
---   left' (Comp (LmapBridge f r) a b) =
---     lmap (left f) $ left' (Comp r a b)
---   left' (Comp r a b) =
---     Comp (LeftBridge r) a (left' b)
+instance Choice (FreerArrow e) where
+  left' (Hom f) = Hom $ left f
+  left' (Comp (LmapBridge f r) a b) =
+    lmap (left f) $ left' (Comp r a b)
+  left' (Comp r a b) =
+    Comp (LeftBridge r) a (left' b)
 
---   right' (Hom IdRoute) = Hom IdRoute
---   right' (Hom r) = Hom $ AppRight r
---   right' (Comp (LmapBridge f r) a b) =
---     lmap (right f) $ right' (Comp r a b)
---   right' (Comp r a b) =
---     Comp (RightBridge r) a (right' b)
+  right' (Hom f) = Hom $ right f
+  right' (Comp (LmapBridge f r) a b) =
+    lmap (right f) $ right' (Comp r a b)
+  right' (Comp r a b) =
+    Comp (RightBridge r) a (right' b)
 
--- instance ArrowChoice (FreerArrow e) where
---   left = left'
+instance ArrowChoice (FreerArrow e) where
+  left = left'
 
 -- instance RoutedProfunctor (FreerArrow e) where
 --   lmapR r1 (Hom r2) = Hom $ CompRoute r1 r2
@@ -108,7 +117,7 @@ instance Category (FreerArrow e) where
 
 -- |- Freer arrows can be interpreted into any arrows, as long as we can provide
 -- an effect handler.
-interp :: (Strong arr, Arrow arr) =>
+interp :: (Strong arr, Choice arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
 interp _       (Hom r) = arr r
 interp handler (Comp f x y) = bridge f (handler x) >>> interp handler y

@@ -11,8 +11,8 @@ data Bridge x a b y where
   FirstBridge :: Bridge x a b y -> Bridge (x, c) a b (y, c)
   SecondBridge :: Bridge x a b y -> Bridge (c, x) a b (c, y)
   
-  -- LeftBridge  :: Bridge x a b y -> Bridge (Either x c) a b (Either y c)
-  -- RightBridge :: Bridge x a b y -> Bridge (Either c x) a b (Either c y)
+  LeftBridge  :: Bridge x a b y -> Bridge (Either x c) a b (Either y c)
+  RightBridge :: Bridge x a b y -> Bridge (Either c x) a b (Either c y)
 
   -- LRouterBridge :: Router w x -> Bridge x a b y -> Bridge w a b y
   LmapBridge :: (w -> x) -> Bridge x a b y -> Bridge w a b y
@@ -41,12 +41,12 @@ cmapBridge f r = LmapBridge f r
 -- route (CompRoute r1 r2) = route r2 . route r1
 -- route (FunRoute f) = f
 
-bridge :: Strong p => Bridge x a b y -> p a b -> p x y
+bridge :: (Strong p, Choice p) => Bridge x a b y -> p a b -> p x y
 bridge IdBridge = id
 bridge (FirstBridge r) = first' . bridge r
 bridge (SecondBridge r) = second' . bridge r
--- bridge (LeftBridge r) = left' . bridge r
--- bridge (RightBridge r) = right' . bridge r
+bridge (LeftBridge r) = left' . bridge r
+bridge (RightBridge r) = right' . bridge r
 -- bridge (LRouterBridge f r) = lmap (route f) . bridge r
 bridge (LmapBridge f r) = lmap f . bridge r
 
@@ -76,6 +76,8 @@ instance Show (Bridge x a b y) where
   show IdBridge = "_"
   show (FirstBridge r) = "First{" ++ show r ++ "}"
   show (SecondBridge r) = "Second{" ++ show r ++ "}"
+  show (LeftBridge r) = "Left{" ++ show r ++ "}"
+  show (RightBridge r) = "Right{" ++ show r ++ "}"
   -- show (LRouterBridge f r) = "LRouter{" ++ show f ++ " >>> " ++ show r ++ "}"
   show (LmapBridge _ r) = "LMap{" ++ show r ++ "}"
 
