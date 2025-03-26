@@ -17,8 +17,6 @@ import Prelude hiding (id, (.))
 {-- begin FreerChoiceArrowB --}
 data FreerChoiceArrowB e x y where
   Hom :: (x -> y) -> FreerChoiceArrowB e x y
-  -- TODO: Perhaps the code would be simpler if we use [Either w (a, c)] instead
-  -- of [Either (a, c) w] because the former is a monad/applicative/functor.
   Comp :: (x -> Either (a, c) w) ->
           (Either (b, c) w -> z) ->
           e a b ->
