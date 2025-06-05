@@ -9,7 +9,9 @@
 module Control.Arrow.State.ArrowMapState where
 
 import Control.Arrow
-import Control.Arrow.Freer.FreerArrowBridge
+import Control.Arrow.Freer.FreerArrow as FA
+import Control.Arrow.Freer.FreerChoiceArrow as FC
+import Control.Arrow.Freer.FreerArrowBridge as FB
 import Data.Kind
 import Control.Monad.State (State)
 import qualified Control.Monad.State as M
@@ -56,13 +58,29 @@ data IndexedMapStateEff :: Type -> Type -> Type -> Type -> Type where
   GetIM :: k -> IndexedMapStateEff k v a v
   PutIM :: k -> IndexedMapStateEff k v v v
 
-instance ArrowMapState k v (FreerArrow (MapStateEff k v)) where
-  getM = embed GetM
-  putM = embed PutM
+instance ArrowMapState k v (FA.FreerArrow (MapStateEff k v)) where
+  getM = FA.embed GetM
+  putM = FA.embed PutM
 
-instance ArrowIndexedMapState k v (FreerArrow (IndexedMapStateEff k v)) where
-  getIM k = embed $ GetIM k
-  putIM k = embed $ PutIM k
+instance ArrowIndexedMapState k v (FA.FreerArrow (IndexedMapStateEff k v)) where
+  getIM k = FA.embed $ GetIM k
+  putIM k = FA.embed $ PutIM k
+
+instance ArrowMapState k v (FB.FreerArrow (MapStateEff k v)) where
+  getM = FB.embed GetM
+  putM = FB.embed PutM
+
+instance ArrowIndexedMapState k v (FB.FreerArrow (IndexedMapStateEff k v)) where
+  getIM k = FB.embed $ GetIM k
+  putIM k = FB.embed $ PutIM k
+
+instance ArrowMapState k v (FC.FreerChoiceArrow (MapStateEff k v)) where
+  getM = FC.embed GetM
+  putM = FC.embed PutM
+
+instance ArrowIndexedMapState k v (FC.FreerChoiceArrow (IndexedMapStateEff k v)) where
+  getIM k = FC.embed $ GetIM k
+  putIM k = FC.embed $ PutIM k
 
 instance Show (MapStateEff k v a b) where
   show GetM = "Get"
