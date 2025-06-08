@@ -11,7 +11,7 @@ import Control.Arrow
 import Data.Profunctor
 import Prelude hiding (id, (.))
 import Control.Arrow.Freer.Bridge
-import GHC.IO.Device (IODevice(seek))
+
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.

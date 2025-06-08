@@ -1,6 +1,6 @@
 cabal-version: 2.2
 
--- This file has been generated from package.yaml by hpack version 0.37.0.
+-- This file has been generated from package.yaml by hpack version 0.38.0.
 --
 -- see: https://github.com/sol/hpack
 
@@ -107,23 +107,6 @@ executable Imp
       Paths_FreerArrow
   hs-source-dirs:
       examples/imp
-  ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
-  build-depends:
-      FreerArrow
-    , base >=4.7 && <5
-    , containers
-    , mtl
-    , profunctors
-  default-language: Haskell2010
-
-executable webclient
-  main-is: Main.hs
-  other-modules:
-      Paths_FreerArrow
-  autogen-modules:
-      Paths_FreerArrow
-  hs-source-dirs:
-      examples/webclient
   ghc-options: -Wall -Wcompat -Widentities -Wincomplete-record-updates -Wincomplete-uni-patterns -Wmissing-export-lists -Wmissing-home-modules -Wpartial-fields -Wredundant-constraints -Wno-missing-export-lists
   build-depends:
       FreerArrow
