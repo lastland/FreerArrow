@@ -11,12 +11,12 @@ import Control.Arrow
 import Data.Profunctor
 import Prelude hiding (id, (.))
 import Control.Arrow.Freer.Bridge
-import GHC.IO.Device (IODevice(seek))
 
 -- |- Freer arrows. This is essentially free arrows (Notions of computation as
 -- monoids, Rivas & Jaskelioff, JFP) inlined with free strong profunctors.
 {-- begin FreerArrow --}
 data FreerArrow e x y where
+  Id :: FreerArrow e x x
   Hom :: (x -> y) -> FreerArrow e x y
   Comp :: Bridge x a b z -> e a b ->
           FreerArrow e z y -> FreerArrow e x y
@@ -27,6 +27,7 @@ data FreerArrow e x y where
 -- the worst case count---how many times effect would appear when all effects
 -- happen. 
 overCount :: FreerArrow e x y -> Int
+overCount Id = 0
 overCount (Hom _) = 0
 overCount (Comp _  _ y) = 1 + overCount y
 
@@ -42,6 +43,7 @@ mightSkip (LmapBridge _ b) = mightSkip b
 -- if there is a LeftBridge or RightBridge which represents that the effect
 -- may not run.
 underCount :: FreerArrow e x y -> Int
+underCount Id = 0
 underCount (Hom _) = 0
 underCount (Comp b _ y) = (if mightSkip b then 0 else 1) + underCount y
 
@@ -62,21 +64,25 @@ embed f = Comp IdBridge f id
 
 -- |- Freer arrows are profunctors.
 instance Profunctor (FreerArrow e) where
+  dimap f g Id = Hom $ g . f
   dimap f g (Hom h) = Hom $ dimap f g h
   dimap f g (Comp r x y) = Comp (cmapBridge f r) x (dimap id g y)
 
   -- lmap can be implemented more efficiently without recursion
+  lmap f Id = Hom f
   lmap f (Hom h) = Hom $ lmap f h
   lmap f (Comp r x y) = Comp (cmapBridge f r) x y
 
 {-- begin Strong_FreerArrow --}
 instance Strong (FreerArrow e) where
+  first' Id = Id
   first' (Hom r) = Hom $ first r
   first' (Comp (LmapBridge f r) a b) =
     lmap (first f) $ first' (Comp r a b)
   first' (Comp r a b) =
     Comp (FirstBridge r) a (first' b)
 
+  second' Id = Id
   second' (Hom r) = Hom $ second r
   second' (Comp (LmapBridge f r) a b) =
     lmap (second f) $ second' (Comp r a b)
@@ -93,12 +99,14 @@ instance Arrow (FreerArrow e) where
 {-- end Arrow_FreerArrow --}
 
 instance Choice (FreerArrow e) where
+  left' Id = Id
   left' (Hom f) = Hom $ left f
   left' (Comp (LmapBridge f r) a b) =
     lmap (left f) $ left' (Comp r a b)
   left' (Comp r a b) =
     Comp (LeftBridge r) a (left' b)
 
+  right' Id = Id
   right' (Hom f) = Hom $ right f
   right' (Comp (LmapBridge f r) a b) =
     lmap (right f) $ right' (Comp r a b)
@@ -115,8 +123,9 @@ instance ArrowChoice (FreerArrow e) where
 {-- begin Category_FreerArrow --}
 -- |- Freer arrows are categories.
 instance Category (FreerArrow e) where
-  id = Hom id
+  id = Id
 
+  f . Id = f
   f . (Hom r) = lmap r f
   f . (Comp f' x y) = Comp f' x (f . y)
 {-- end Category_FreerArrow --}
@@ -125,9 +134,11 @@ instance Category (FreerArrow e) where
 -- an effect handler.
 interp :: (Strong arr, Choice arr, Arrow arr) =>
   (e :-> arr) -> FreerArrow e x y -> arr x y
+interp _       Id = id
 interp _       (Hom r) = arr r
 interp handler (Comp f x y) = bridge f (handler x) >>> interp handler y
 
 instance (forall a b. Show (e a b)) => Show (FreerArrow e x y) where
+  show Id = "Id"
   show (Hom _) = "Hom"
   show (Comp f e c) = "(" ++ show f ++ "[" ++ show e ++ "] >>>\n" ++ show c ++ ")"
