@@ -25,6 +25,21 @@ interp h (Elgot l k) =
   let go = l' >>> k' ||| go in
     go
 
+data ElgotFull f (e :: Type -> Type -> Type) a d where
+  ElgotFull ::
+    f e a b ->
+    f e b (Either c b) ->
+    f e c d ->
+    ElgotFull f e a d
+    
+interpE :: ArrowChoice arr =>
+  (f e :-> arr) -> ElgotFull f e x y -> arr x y
+interpE h (ElgotFull p l k) =
+  let !l' = h l in
+  let !k' = h k in
+  let go = l' >>> k' ||| go in
+    h p >>> go
+
 {-- begin ElgotC --}
 data ElgotC f x y where
   ElgotC :: f x (Either z x) -> f z y -> ElgotC f x y
