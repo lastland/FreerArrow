@@ -44,8 +44,7 @@ putput (Comp f e c) = Comp f e $ putput c
 putput x = x
 
 echo :: k -> FreerArrow (IndexedMapStateEff k v) () v
-echo k = Comp IdBridge (GetIM k) $
-         Comp IdBridge (PutIM k) id
+echo k = getIM k >>> putIM k
 
 echo_Int :: Int -> FreerArrow (IndexedMapStateEff Int Int) () Int
 echo_Int = echo
