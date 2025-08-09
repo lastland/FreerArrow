@@ -1,0 +1,3 @@
+[submodule "HasChor"]
+	path = HasChor
+	url = git@github.com:professorg/HasChor.git
