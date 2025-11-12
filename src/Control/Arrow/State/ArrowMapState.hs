@@ -48,11 +48,11 @@ instance Eq k => ArrowIndexedMapState k v (MapStateA k v) where
   putIM k = MapStateA . Kleisli $ \v -> mapUpdate k v <$> M.get >> pure v
 
 -- |- An ADT for stateful effect.
-data MapStateEff :: Type -> Type -> Type -> Type -> Type where
+data MapStateEff k v :: Type -> Type -> Type where
   GetM :: MapStateEff k v k v
   PutM :: MapStateEff k v (k, v) v
 
-data IndexedMapStateEff :: Type -> Type -> Type -> Type -> Type where
+data IndexedMapStateEff k v :: Type -> Type -> Type where
   GetIM :: k -> IndexedMapStateEff k v a v
   PutIM :: k -> IndexedMapStateEff k v v v
 
@@ -63,6 +63,10 @@ instance ArrowMapState k v (FreerArrow (MapStateEff k v)) where
 instance ArrowIndexedMapState k v (FreerArrow (IndexedMapStateEff k v)) where
   getIM k = embed $ GetIM k
   putIM k = embed $ PutIM k
+
+instance ArrowIndexedMapState k v (FreerArrow (MapStateEff k v)) where
+  getIM k = arr (const k) >>> embed GetM
+  putIM k = arr (\v -> (k, v)) >>> embed PutM
 
 instance Show (MapStateEff k v a b) where
   show GetM = "Get"
