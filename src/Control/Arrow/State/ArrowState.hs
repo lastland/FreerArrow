@@ -83,6 +83,10 @@ data StateEff :: Type -> Type -> Type -> Type where
   Get :: StateEff s a s
   Put :: StateEff s s s
 
+-- instance ArrowState s (FreerArrow (StateEff s)) where
+--   get = embed Get
+--   put = embed Put
+
 handleState :: ArrowState s a => StateEff s x y -> a x y
 handleState Get = get
 handleState Put = put
